@@ -20,8 +20,6 @@ def convert_graph(graph,
             include_unknown_set=True,
         )
         graph.nodes[node]['degree'] = float(graph.degree[node])
-        # for attr in ['x', 'y', 'z']:
-        #     del graph.nodes[node][attr]
         for attr in ['x', 'y', 'z']:
             graph.nodes[node][attr] = float(graph.nodes[node][attr])
     for edge in graph.edges:
@@ -30,9 +28,21 @@ def convert_graph(graph,
 
     # Convert to PyG.
     pyg_graph = from_networkx(graph, group_node_attrs=[
-                              'degree', 'x', 'y', 'z'])
+                              'atom_symbol', 'degree', 'x', 'y', 'z'])
     pyg_graph.y = g_property
     return pyg_graph
+
+
+def load_greyc_networkx_graphs(dataset: str):
+    """Load the dataset as a llist of networkx graphs and returns list of graphs and list of properties
+
+    Args:
+       dataset:str the dataset to load (Alkane,Acyclic,...)
+
+    Returns:
+    list of nx graphs
+    list of properties (float or int)
+    """
 
 
 def load_alkane_pyg_graphs():
@@ -42,6 +52,18 @@ def load_alkane_pyg_graphs():
         os.path.join(ds_path, 'dataset.ds'),
         filename_targets=os.path.join(
             ds_path, 'dataset_boiling_point_names.txt'),
+        dformat='ds', gformat='ct', y_separator=' ')
+
+    graphs = dloader.graphs  # networkx graphs
+    return [convert_graph(graph, g_property=y) for graph, y in zip(graphs, dloader._targets)]
+
+
+def load_acyclic_pyg_graphs():
+    # Load dataset.
+    ds_path = 'graphkit-learn/datasets/Acyclic/Acyclic/'
+    dloader = DataLoader(
+        os.path.join(ds_path, 'dataset_bps.ds'),
+        filename_targets=None,
         dformat='ds', gformat='ct', y_separator=' ')
 
     graphs = dloader.graphs  # networkx graphs
