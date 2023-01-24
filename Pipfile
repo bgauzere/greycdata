@@ -4,17 +4,12 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-numpy = "*"
-networkx = "*"
-jupyter = "*"
 torch = "*"
+torchvision = "*"
+torchaudio = "*"
+networkx = "*"
 tqdm = "*"
-matplotlib = "*"
-torch-scatter = "*"
-torch-sparse = "*"
-torch-cluster = "*"
-torch-spline-conv = "*"
-torch-geometric = "*"
+ipykernel = "*"
 
 [dev-packages]
 
