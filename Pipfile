@@ -10,6 +10,7 @@ torchaudio = "*"
 networkx = "*"
 tqdm = "*"
 ipykernel = "*"
+matplotlib = "*"
 
 [dev-packages]
 

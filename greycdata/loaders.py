@@ -4,7 +4,7 @@ Module to load greyc datasets as list of networkx graphs
 
 import os
 from enum import Enum
-from gklearn.dataset import DataLoader
+from greycdata.file_managers import DataLoader
 from greycdata.utils import one_hot_encode
 
 
@@ -60,7 +60,7 @@ def _load_greyc_networkx_graphs(dataset: DatasetName):
     loader = loader_f()
     if loader is None:
         raise Exception("Dataset Not Found")
-    breakpoint()
+
     graphs = [prepare_graph(graph) for graph in loader.graphs]
     return graphs, loader.targets
 
@@ -85,7 +85,7 @@ def _loader_alkane():
     - boiling points
     """
     # Load dataset.
-    ds_path = 'graphkit-learn/datasets/Alkane/Alkane/'
+    ds_path = 'greycdata/data/Alkane/'
     dloader = DataLoader(
         os.path.join(ds_path, 'dataset.ds'),
         filename_targets=os.path.join(
@@ -96,7 +96,7 @@ def _loader_alkane():
 
 def _loader_acyclic():
     # Load dataset.
-    ds_path = 'graphkit-learn/datasets/Acyclic/Acyclic/'
+    ds_path = 'greycdata/data/Acyclic/'
     dloader = DataLoader(
         os.path.join(ds_path, 'dataset_bps.ds'),
         filename_targets=None,
@@ -106,7 +106,7 @@ def _loader_acyclic():
 
 def _loader_mao():
     # Load dataset.
-    ds_path = 'graphkit-learn/datasets/MAO/'
+    ds_path = 'greycdata/data/MAO/'
     dloader = DataLoader(
         os.path.join(ds_path, 'dataset.ds'),
         filename_targets=None,

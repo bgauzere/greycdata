@@ -1,3 +1,6 @@
+"""
+Tiré de graphkit-learn @Linlin Jia
+"""
 from typing import List, Union
 
 
