@@ -2,10 +2,6 @@
 
 1. Install pytorch geometric >= 2.0
 see https://pytorch-geometric.readthedocs.io/en/latest/notes/installation.html
-2. Install latest graphkit-learn from github
-`$ git clone https://github.com/jajupmochi/graphkit-learn.git`
-`$ cd graphkit-learn/`
-`$ python setup.py install`
 
 3. `pipenv install`
 

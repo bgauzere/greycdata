@@ -14,6 +14,9 @@ class DatasetName(str, Enum):
     MAO = "MAO"
 
 
+PATH = os.path.dirname(__file__)
+
+
 def prepare_graph(graph, atom_list=['C', 'N', 'O', 'F', 'P', 'S', 'Cl', 'Br', 'I', 'H']):
     """
     Prepare graph to include all data before pyg conversion
@@ -96,7 +99,7 @@ def _loader_alkane():
 
 def _loader_acyclic():
     # Load dataset.
-    ds_path = 'greycdata/data/Acyclic/'
+    ds_path = '/data/Acyclic/'
     dloader = DataLoader(
         os.path.join(ds_path, 'dataset_bps.ds'),
         filename_targets=None,
@@ -106,7 +109,8 @@ def _loader_acyclic():
 
 def _loader_mao():
     # Load dataset.
-    ds_path = 'greycdata/data/MAO/'
+    rel_path = 'data/MAO/'
+    ds_path = os.path.join(PATH, rel_path)
     dloader = DataLoader(
         os.path.join(ds_path, 'dataset.ds'),
         filename_targets=None,

@@ -1,0 +1,40 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+# requires = ["setuptools>=61.0"]
+# build-backend = "setuptools.build_meta"
+
+[project]
+name = "greycdata_bgauzere"
+version = "0.0.8"
+authors = [
+  { name="Benoit Gaüzère", email="benoit.gauzere@insa-rouen.fr" },
+]
+description = "A package to load data from GREYC"
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+#include_package_data = True
+[project.urls]
+"Homepage" = "https://github.com/bgauzere/greycdata"
+# "Bug Tracker" = "https://github.com/pypa/sampleproject/issues"
+
+[tool.setuptools]
+include-package-data = true
+
+
+
+[tool.hatch.build.targets.wheel]
+only-include = ["greycdata", "greycdata/data"]
+
+[tool.hatch.build.targets.wheel.sources]
+"src" = ""
+"data" = "greycdata/data"
+
+# [tool.setuptools.packages.find]
+# include = ['greycdata']
+# exclude = ['mygnn','data']
