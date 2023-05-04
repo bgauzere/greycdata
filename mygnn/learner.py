@@ -72,8 +72,7 @@ class Learner():
             loss_epoch = 0.0
             for data in loader:  # Iterate in batches over the training dataset.
                 # Perform a single forward pass.
-                out = self.model(data.x, data.edge_index,
-                                 data.batch)
+                out = self.model(data.x, data.edge_index, data.batch)
                 # Compute the loss.
                 # FIXME: .reshape(-1,1) our la reg
                 y_gt = data.y
@@ -91,8 +90,7 @@ class Learner():
         return losses
 
     def _predict_batch(self, data_batch):
-        out = self.model(data_batch.x, data_batch.edge_index,
-                         data_batch.batch)
+        out = self.model(data_batch.x, data_batch.edge_index, data_batch.batch)
         if self.mode == Task.CLASSIF:
             out = out.argmax(dim=1)
         return out

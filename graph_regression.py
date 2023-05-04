@@ -5,14 +5,20 @@
 # inspired and derived from https://pytorch-geometric.readthedocs.io/en/latest/notes/colabs.html
 
 
+import pickle
 import matplotlib.pyplot as plt
 from torch_geometric.loader import DataLoader
+from torch.nn import Linear, ReLU
+from torch_geometric.nn import Sequential, GCNConv
+from torch_geometric.nn import global_add_pool, global_max_pool
 
 from greycdata.datasets import GreycDataset
 from mygnn.learner import Learner, Task
-from mygnn.models import GCN_reg
+from mygnn.models import GCN_reg, GAT_reg, DiffPool_reg
+
 
 RATIO_TRAIN = .9
+NB_EPOCHS = 1000
 
 
 def main():
@@ -32,39 +38,42 @@ def main():
     print(f'Is undirected: {data.is_undirected()}')
     print(data.x)
 
-    dataset = dataset.shuffle()
+    models = {}
+    models["GCN"] = GCN_reg(input_channels=dataset.num_features,
+                            hidden_channels=128)
+    models["GAT"] = GAT_reg(input_channels=dataset.num_features,
+                            hidden_channels=128)
+    models["GCN_maxpool"] = GCN_reg(input_channels=dataset.num_features,
+                                    hidden_channels=128, pool=global_max_pool)
 
-    size_train = int(len(dataset)*RATIO_TRAIN)
-    train_dataset = dataset[:size_train]
-    test_dataset = dataset[size_train:]
+    models["DiffPool"] = DiffPool_reg(input_channels=dataset.num_features,
+                                      hidden_channels=128)
+    results = {name: {"train": [], "test": []} for name in models}
+    for xp in range(10):
+        print(f"xp n° {xp}")
+        dataset = dataset.shuffle()
 
-    print(f'Number of training graphs: {len(train_dataset)}')
-    print(f'Number of test graphs: {len(test_dataset)}')
+        size_train = int(len(dataset)*RATIO_TRAIN)
+        train_dataset = dataset[:size_train]
+        test_dataset = dataset[size_train:]
 
-    train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
+        print(f'Number of training graphs: {len(train_dataset)}')
+        print(f'Number of test graphs: {len(test_dataset)}')
 
-    print(dataset[0].y)
+        train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True)
+        test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 
-    for step, data in enumerate(train_loader):
-        print(f'Step {step + 1}:')
-        print('=======')
-        print(f'Number of graphs in the current batch: {data.num_graphs}')
-        print(data)
-        print()
-
-    model = GCN_reg(input_channels=dataset.num_features,
-                    hidden_channels=128)
-
-    learner = Learner(model, mode=Task.REGRESSION)
-    losses = []
-    losses = learner.train(train_loader, nb_epochs=1000)
-    plt.plot(losses)
-    plt.show()
-    rmse_train = learner.score(train_loader)
-    print(f"RMSE on train set :{rmse_train:.2f}")
-    rmse_test = learner.score(test_loader)
-    print(f"RMSE on test set :{rmse_test:.2f}")
+        for name, model in models.items():
+            learner = Learner(model, mode=Task.REGRESSION)
+            _ = learner.train(train_loader, nb_epochs=NB_EPOCHS)
+            rmse_train = learner.score(train_loader)
+            print(f"RMSE on train set :{rmse_train:.2f}")
+            rmse_test = learner.score(test_loader)
+            print(f"RMSE on test set :{rmse_test:.2f}")
+            results[name]["train"].append(rmse_train)
+            results[name]["test"].append(rmse_test)
+    with open("results.pickle", "wb") as f:
+        pickle.dump(results, f)
 
 
 if __name__ == '__main__':

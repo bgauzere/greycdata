@@ -88,7 +88,8 @@ def _loader_alkane():
     - boiling points
     """
     # Load dataset.
-    ds_path = 'greycdata/data/Alkane/'
+    rel_path = 'data/Alkane/'
+    ds_path = os.path.join(PATH, rel_path)
     dloader = DataLoader(
         os.path.join(ds_path, 'dataset.ds'),
         filename_targets=os.path.join(
@@ -99,7 +100,8 @@ def _loader_alkane():
 
 def _loader_acyclic():
     # Load dataset.
-    ds_path = '/data/Acyclic/'
+    rel_path = 'data/Acyclic/'
+    ds_path = os.path.join(PATH, rel_path)
     dloader = DataLoader(
         os.path.join(ds_path, 'dataset_bps.ds'),
         filename_targets=None,

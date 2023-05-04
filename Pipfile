@@ -5,12 +5,13 @@ name = "pypi"
 
 [packages]
 torch = "*"
-torchvision = "*"
-torchaudio = "*"
 networkx = "*"
 tqdm = "*"
 ipykernel = "*"
 matplotlib = "*"
+tabulate = "*"
+torch-geometric = "*"
+ipdb = "*"
 
 [dev-packages]
 
