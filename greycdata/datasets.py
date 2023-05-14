@@ -27,6 +27,9 @@ class GreycDataset(InMemoryDataset):
     # def raw_file_names(self):
     #     return []  # ['some_file_1', 'some_file_2', ...]
 
+    def __str__(self):
+        return self.name
+
     @property
     def processed_file_names(self):
         return ['data.pt']

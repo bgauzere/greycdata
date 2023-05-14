@@ -12,6 +12,7 @@ matplotlib = "*"
 tabulate = "*"
 torch-geometric = "*"
 ipdb = "*"
+wandb = "*"
 
 [dev-packages]
 

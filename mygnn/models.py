@@ -15,13 +15,17 @@ class GCN_clf(torch.nn.Module):
         self.conv1 = GCNConv(input_channels, hidden_channels)
         self.conv2 = GCNConv(hidden_channels, hidden_channels)
         self.lin = Linear(hidden_channels, num_classes)
+        self.pool = global_add_pool
+        self.config = {'hidden_channels': hidden_channels,
+                       'nb_conv_layers': 2,
+                       'pooling': self.pool}
 
     def forward(self, x, edge_index, batch):
         x = self.conv1(x, edge_index)
         x = x.relu()
         x = self.conv2(x, edge_index)
 
-        x = global_add_pool(x, batch)
+        x = self.pool(x, batch)
         x = self.lin(x)
         return x
 
@@ -34,6 +38,9 @@ class GCN_reg(torch.nn.Module):
         self.lin = Linear(hidden_channels, 1)
         self.pool = pool
         nn.init.xavier_uniform_(self.conv1.lin.weight)
+        self.config = {'hidden_channels': hidden_channels,
+                       'nb_conv_layers': 2,
+                       'pooling': self.pool}
 
     def forward(self, x, edge_index, batch):
         x = self.conv1(x, edge_index)
@@ -51,13 +58,17 @@ class GAT_reg(torch.nn.Module):
         self.conv1 = GATv2Conv(input_channels, hidden_channels)
         self.conv2 = GATv2Conv(hidden_channels, hidden_channels)
         self.lin = Linear(hidden_channels, 1)
+        self.pool = global_add_pool
+        self.config = {'hidden_channels': hidden_channels,
+                       'nb_conv_layers': 2,
+                       'pooling': self.pool}
 
     def forward(self, x, edge_index, batch):
         x = self.conv1(x, edge_index)
         x = x.relu()
         x = self.conv2(x, edge_index)
 
-        x = global_add_pool(x, batch)
+        x = self.pool(x, batch)
         x = self.lin(x)
         return x
 
@@ -72,6 +83,10 @@ class TopKPool_reg(torch.nn.Module):
         self.gnn2_embed = GCNConv(hidden_channels, hidden_channels)
         self.pool = TopKPooling(hidden_channels)
         self.lin = Linear(hidden_channels, 1)
+        self.config = {'hidden_channels': hidden_channels,
+                       'nb_conv_layers': 2,
+                       'pooling': self.pool,
+                       'nb_nodes': num_nodes}
 
     def forward(self, x, edge_index, batch):
         x_l1 = self.gnn1_embed(x, edge_index)
@@ -102,6 +117,10 @@ class DiffPool_reg(torch.nn.Module):
             self.hidden_channels, self.hidden_channels)
         self.pool = dense_diff_pool
         self.lin = Linear(self.hidden_channels, 1)
+        self.config = {'hidden_channels': hidden_channels,
+                       'nb_conv_layers': 2,
+                       'pooling': self.pool,
+                       'nb_nodes': num_nodes}
 
     def forward(self, x, edge_index, batch):
         x_dense, mask = to_dense_batch(x, batch)
