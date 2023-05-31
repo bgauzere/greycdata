@@ -13,6 +13,7 @@ tabulate = "*"
 torch-geometric = "*"
 ipdb = "*"
 wandb = "*"
+scienceplots = "*"
 
 [dev-packages]
 

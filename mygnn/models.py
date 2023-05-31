@@ -20,6 +20,11 @@ class GCN_clf(torch.nn.Module):
                        'nb_conv_layers': 2,
                        'pooling': self.pool}
 
+    def reset_parameters(self):
+        self.conv1.reset_parameters()
+        self.conv2.reset_parameters()
+        self.lin.reset_parameters()
+
     def forward(self, x, edge_index, batch):
         x = self.conv1(x, edge_index)
         x = x.relu()
@@ -42,6 +47,11 @@ class GCN_reg(torch.nn.Module):
                        'nb_conv_layers': 2,
                        'pooling': self.pool}
 
+    def reset_parameters(self):
+        self.conv1.reset_parameters()
+        self.conv2.reset_parameters()
+        self.lin.reset_parameters()
+
     def forward(self, x, edge_index, batch):
         x = self.conv1(x, edge_index)
         x = x.relu()
@@ -62,6 +72,11 @@ class GAT_reg(torch.nn.Module):
         self.config = {'hidden_channels': hidden_channels,
                        'nb_conv_layers': 2,
                        'pooling': self.pool}
+
+    def reset_parameters(self):
+        self.conv1.reset_parameters()
+        self.conv2.reset_parameters()
+        self.lin.reset_parameters()
 
     def forward(self, x, edge_index, batch):
         x = self.conv1(x, edge_index)
@@ -87,6 +102,11 @@ class TopKPool_reg(torch.nn.Module):
                        'nb_conv_layers': 2,
                        'pooling': self.pool,
                        'nb_nodes': num_nodes}
+
+    def reset_parameters(self):
+        self.gnn1_embed.reset_parameters()
+        self.gnn2_embed.reset_parameters()
+        self.lin.reset_parameters()
 
     def forward(self, x, edge_index, batch):
         x_l1 = self.gnn1_embed(x, edge_index)
@@ -121,6 +141,12 @@ class DiffPool_reg(torch.nn.Module):
                        'nb_conv_layers': 2,
                        'pooling': self.pool,
                        'nb_nodes': num_nodes}
+
+    def reset_parameters(self):
+        self.gnn_pool.reset_parameters()
+        self.gnn1_embed.reset_parameters()
+        self.gnn2_embed.reset_parameters()
+        self.lin.reset_parameters()
 
     def forward(self, x, edge_index, batch):
         x_dense, mask = to_dense_batch(x, batch)

@@ -20,7 +20,8 @@ from mygnn.models import GCN_reg, GAT_reg, DiffPool_reg, TopKPool_reg
 
 
 RATIO_TRAIN = .9
-NB_EPOCHS = 100
+MAX_NB_EPOCHS = 10000
+PATIENCE = 500
 
 
 def main():
@@ -47,28 +48,30 @@ def main():
                             hidden_channels=params['hidden_channels'])
     models["GAT"] = GAT_reg(input_channels=dataset.num_features,
                             hidden_channels=params['hidden_channels'])
-    models["GCN_maxpool"] = GCN_reg(input_channels=dataset.num_features,
-                                    hidden_channels=params['hidden_channels'],
-                                    pool=global_max_pool)
-    models["TopKPool"] = TopKPool_reg(input_channels=dataset.num_features,
-                                      hidden_channels=params['hidden_channels'])
+    # models["GCN_maxpool"] = GCN_reg(input_channels=dataset.num_features,
+    #                                 hidden_channels=params['hidden_channels'],
+    #                                 pool=global_max_pool)
+    # models["TopKPool"] = TopKPool_reg(input_channels=dataset.num_features,
+    #                                   hidden_channels=params['hidden_channels'])
 
     models["DiffPool"] = DiffPool_reg(input_channels=dataset.num_features,
                                       hidden_channels=params['hidden_channels'])
     results = {name: {"train": [], "test": []} for name in models}
 
     for name, model in models.items():
-        learner = Learner(model, mode=Task.REGRESSION)
+        learner = Learner(model, mode=Task.REGRESSION,
+                          max_nb_epochs=MAX_NB_EPOCHS,
+                          patience=PATIENCE)
         model_params = model.config
         config_model = {"architecture": name,
                         "dataset": str(dataset),
                         "ratio_train": RATIO_TRAIN,
-                        "nb_epochs": NB_EPOCHS}
-        wandb.init(project='gnn_greyc', config=model_params | config_model)
-
+                        "max_nb_epochs": MAX_NB_EPOCHS,
+                        "patience": PATIENCE}
+        group_name = wandb.util.generate_id()
         for xp in range(10):
-            # model.reset_parameters()
-            # FIXME : each xp has a warm start
+            wandb.init(project='gnn_greyc', config=model_params |
+                       config_model, group=group_name+"_"+name)
             dataset = dataset.shuffle()
 
             size_train = int(len(dataset)*RATIO_TRAIN)
@@ -79,8 +82,11 @@ def main():
                 train_dataset, batch_size=8, shuffle=True)
             test_loader = DataLoader(
                 test_dataset, batch_size=32, shuffle=False)
-
-            _ = learner.train(train_loader, nb_epochs=NB_EPOCHS)
+            learner.reset()
+            # Pas de valid/test pour l'instant !
+            _ = learner.train(
+                train_loader, valid_loader=test_loader,
+                wandb_log=True)
             rmse_train = learner.score(train_loader)
             rmse_test = learner.score(test_loader)
 
@@ -93,16 +99,18 @@ def main():
 
             results[name]["train"].append(rmse_train)
             results[name]["test"].append(rmse_test)
+            wandb.finish()
+
         results[name]["mean_train"] = np.mean(results[name]["train"])
         results[name]["std_train"] = np.std(results[name]["train"])
         results[name]["mean_test"] = np.mean(results[name]["test"])
         results[name]["std_test"] = np.std(results[name]["test"])
 
-        wandb.log({"test/mean_rmse": results[name]["mean_test"],
-                   "test/std_rmse": results[name]["std_test"],
-                   "train/mean_rmse": results[name]["mean_train"],
-                   "train/std_rmse": results[name]["std_train"]})
-        wandb.finish()
+        # wandb.log({"test/mean_rmse": results[name]["mean_test"],
+        #            "test/std_rmse": results[name]["std_test"],
+        #            "train/mean_rmse": results[name]["mean_train"],
+        #            "train/std_rmse": results[name]["std_train"]})
+
     with open("results.pickle", "wb") as f:
         pickle.dump(results, f)
 
