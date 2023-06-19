@@ -1,0 +1,37 @@
+{
+		"ratio_train": 0.9,
+		"max_nb_epochs": 10000,
+		"patience": 500,
+		"dataset": "Acyclic",
+		"learning_rate": 0.03,
+		"batch_size_train": 32,
+		"models" : {
+				"GCN" :
+				{
+						"class" : "GCN_reg",
+						"init_params":
+						{
+								"hidden_channels": 128,
+								"input_channels": 15
+						}
+				},
+				"GAT" :
+				{
+						"class" : "GAT_reg",
+						"init_params":
+						{
+								"hidden_channels": 128,
+								"input_channels": 15
+						}
+				},
+				"DiffPool" :
+				{
+						"class" : "DiffPool_reg",
+						"init_params":
+						{
+								"hidden_channels": 128,
+								"input_channels": 15
+						}
+				}
+		}
+}

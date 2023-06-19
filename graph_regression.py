@@ -5,6 +5,7 @@
 # inspired and derived from https://pytorch-geometric.readthedocs.io/en/latest/notes/colabs.html
 
 
+import json
 import numpy as np
 import pickle
 import matplotlib.pyplot as plt
@@ -17,11 +18,6 @@ import wandb
 from greycdata.datasets import GreycDataset
 from mygnn.learner import Learner, Task
 from mygnn.models import GCN_reg, GAT_reg, DiffPool_reg, TopKPool_reg
-
-
-RATIO_TRAIN = .9
-MAX_NB_EPOCHS = 10000
-PATIENCE = 500
 
 
 def main():
@@ -42,49 +38,69 @@ def main():
     print(data.x)
 
     models = {}
-    params = {'hidden_channels': 128}
 
-    models["GCN"] = GCN_reg(input_channels=dataset.num_features,
-                            hidden_channels=params['hidden_channels'])
-    models["GAT"] = GAT_reg(input_channels=dataset.num_features,
-                            hidden_channels=params['hidden_channels'])
+    with open("config.json", "r") as f:
+        config_learning = json.load(f)
+
+    # config_learning = {
+    #     "hidden_channels": 128,
+    #     "ratio_train": RATIO_TRAIN,
+    #     "max_nb_epochs": MAX_NB_EPOCHS,
+    #     "patience": PATIENCE,
+    #     "dataset": str(dataset),
+    #     "learning_rate": 0.03,
+    #     "batch_size_train": 32
+
+    # }
+
+    models_dict = config_learning["models"]
+    for name, config in models_dict.items():
+        class_model = globals()[config["class"]]
+        models[name] = class_model(**config["init_params"])
+
+    # "GCN"] = GCN_reg(input_channels=dataset.num_features,
+    #                         hidden_channels=config_learning['hidden_channels'])
+    # models["GAT"] = GAT_reg(input_channels=dataset.num_features,
+    #                         hidden_channels=config_learning['hidden_channels'])
     # models["GCN_maxpool"] = GCN_reg(input_channels=dataset.num_features,
     #                                 hidden_channels=params['hidden_channels'],
     #                                 pool=global_max_pool)
     # models["TopKPool"] = TopKPool_reg(input_channels=dataset.num_features,
     #                                   hidden_channels=params['hidden_channels'])
 
-    models["DiffPool"] = DiffPool_reg(input_channels=dataset.num_features,
-                                      hidden_channels=params['hidden_channels'])
+    # models["DiffPool"] = DiffPool_reg(input_channels=dataset.num_features,
+    #                                   hidden_channels=config_learning['hidden_channels'])
+
     results = {name: {"train": [], "valid": [], "test": []} for name in models}
 
     for name, model in models.items():
         learner = Learner(model, mode=Task.REGRESSION,
-                          max_nb_epochs=MAX_NB_EPOCHS,
-                          patience=PATIENCE)
+                          max_nb_epochs=config_learning["max_nb_epochs"],
+                          patience=config_learning["patience"],
+                          ratio_train_valid=[
+                              config_learning["ratio_train"],
+                              1-config_learning["ratio_train"]],
+                          learning_rate=config_learning["learning_rate"])
         model_params = model.config
-        config_model = {"architecture": name,
-                        "dataset": str(dataset),
-                        "ratio_train": RATIO_TRAIN,
-                        "max_nb_epochs": MAX_NB_EPOCHS,
-                        "patience": PATIENCE}
         group_name = wandb.util.generate_id()
 
         # Pour un split de test, va générer 3 perfs de test et 10 de valid
         dataset = dataset.shuffle()
 
-        size_train = int(len(dataset)*RATIO_TRAIN)
+        size_train = int(len(dataset)*config_learning["ratio_train"])
         train_dataset = dataset[:size_train]
         test_dataset = dataset[size_train:]
 
         train_loader = DataLoader(
-            train_dataset, batch_size=8, shuffle=True)
+            train_dataset, batch_size=config_learning["batch_size_train"], shuffle=True)
         test_loader = DataLoader(
             test_dataset, batch_size=32, shuffle=False)
 
+        config_xp = {"architecture": name, "mode": "valid"}
+
         for xp_valid in range(10):
             wandb.init(project='gnn_greyc', config=model_params |
-                       config_model | {"mode": "valid"},
+                       config_learning | config_xp,
                        group=group_name+"_"+name)
             learner.reset()
             # Pas de valid/test pour l'instant !
@@ -103,9 +119,10 @@ def main():
         results[name]["mean_valid"] = np.mean(results[name]["valid"])
         results[name]["std_valid"] = np.std(results[name]["valid"])
 
+        config_xp["mode"] = "test"
         for xp_test in range(3):
             wandb.init(project='gnn_greyc', config=model_params |
-                       config_model | {"mode": "test"},
+                       config_learning | config_xp,
                        group=group_name+"_"+name)
 
             learner.reset()

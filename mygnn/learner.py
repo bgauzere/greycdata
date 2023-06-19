@@ -22,7 +22,8 @@ class Learner():
     def __init__(self, model, mode=Task.CLASSIF, optimizer=None,
                  max_nb_epochs=10000,
                  patience=100,
-                 ratio_train_valid=[.9, .1]):
+                 ratio_train_valid=[.9, .1],
+                 learning_rate=0.03):
         """Initialisation of the learner
 
         Parameters
@@ -55,9 +56,9 @@ class Learner():
             self.criterion = torch.nn.MSELoss(reduction="sum")
         else:
             raise Exception(f"Unknown mode !! {mode}")
-
+        self.lr = learning_rate
         if optimizer is None:
-            optimizer = torch.optim.Adam(model.parameters(), lr=0.03)
+            optimizer = torch.optim.Adam(model.parameters(), lr=self.lr)
         self.optimizer = optimizer
         self.max_nb_epochs = max_nb_epochs
         self.patience = patience
