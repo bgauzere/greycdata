@@ -56,7 +56,7 @@ def main():
 
     models["DiffPool"] = DiffPool_reg(input_channels=dataset.num_features,
                                       hidden_channels=params['hidden_channels'])
-    results = {name: {"train": [], "test": []} for name in models}
+    results = {name: {"train": [], "valid": [], "test": []} for name in models}
 
     for name, model in models.items():
         learner = Learner(model, mode=Task.REGRESSION,
@@ -69,42 +69,58 @@ def main():
                         "max_nb_epochs": MAX_NB_EPOCHS,
                         "patience": PATIENCE}
         group_name = wandb.util.generate_id()
-        for xp in range(10):
+
+        # Pour un split de test, va générer 3 perfs de test et 10 de valid
+        dataset = dataset.shuffle()
+
+        size_train = int(len(dataset)*RATIO_TRAIN)
+        train_dataset = dataset[:size_train]
+        test_dataset = dataset[size_train:]
+
+        train_loader = DataLoader(
+            train_dataset, batch_size=8, shuffle=True)
+        test_loader = DataLoader(
+            test_dataset, batch_size=32, shuffle=False)
+
+        for xp_valid in range(10):
             wandb.init(project='gnn_greyc', config=model_params |
-                       config_model, group=group_name+"_"+name)
-            dataset = dataset.shuffle()
-
-            size_train = int(len(dataset)*RATIO_TRAIN)
-            train_dataset = dataset[:size_train]
-            test_dataset = dataset[size_train:]
-
-            train_loader = DataLoader(
-                train_dataset, batch_size=8, shuffle=True)
-            test_loader = DataLoader(
-                test_dataset, batch_size=32, shuffle=False)
+                       config_model | {"mode": "valid"},
+                       group=group_name+"_"+name)
             learner.reset()
             # Pas de valid/test pour l'instant !
-            _ = learner.train(
-                train_loader, valid_loader=test_loader,
+            learner.train(
+                train_loader,
                 wandb_log=True)
-            rmse_train = learner.score(train_loader)
-            rmse_test = learner.score(test_loader)
 
-            # logging/printing
-            print(f"RMSE on train set :{rmse_train:.2f}")
-            print(f"RMSE on test set :{rmse_test:.2f}")
-
-            wandb.log({"test/rmse": rmse_test,
-                       "train/rmse": rmse_train})
+            rmse_train, rmse_valid = learner.best_score()
 
             results[name]["train"].append(rmse_train)
-            results[name]["test"].append(rmse_test)
+            results[name]["valid"].append(rmse_valid)
             wandb.finish()
 
         results[name]["mean_train"] = np.mean(results[name]["train"])
         results[name]["std_train"] = np.std(results[name]["train"])
-        results[name]["mean_test"] = np.mean(results[name]["test"])
-        results[name]["std_test"] = np.std(results[name]["test"])
+        results[name]["mean_valid"] = np.mean(results[name]["valid"])
+        results[name]["std_valid"] = np.std(results[name]["valid"])
+
+        for xp_test in range(3):
+            wandb.init(project='gnn_greyc', config=model_params |
+                       config_model | {"mode": "test"},
+                       group=group_name+"_"+name)
+
+            learner.reset()
+            # Pas de valid/test pour l'instant !
+            learner.train(
+                train_loader,
+                wandb_log=True)
+
+            rmse_train, rmse_valid = learner.best_score()
+            rmse_test = learner.score(test_loader)
+            results[name]["train"].append(rmse_train)
+            results[name]["valid"].append(rmse_valid)
+            results[name]["test"].append(rmse_test)
+
+            wandb.finish()
 
         # wandb.log({"test/mean_rmse": results[name]["mean_test"],
         #            "test/std_rmse": results[name]["std_test"],

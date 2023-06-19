@@ -5,6 +5,7 @@ import torch
 from mygnn.utils import rmse, nb_correct_classif
 import wandb
 from torch.utils.data import random_split
+from torch_geometric.loader import DataLoader
 
 
 class Task(Enum):
@@ -20,7 +21,8 @@ class Learner():
 
     def __init__(self, model, mode=Task.CLASSIF, optimizer=None,
                  max_nb_epochs=10000,
-                 patience=100):
+                 patience=100,
+                 ratio_train_valid=[.9, .1]):
         """Initialisation of the learner
 
         Parameters
@@ -46,6 +48,7 @@ class Learner():
         self.model = model
         self.best_model = None  # meilleur modele appris
         self.mode = mode
+        self.ratio_train_valid = ratio_train_valid
         if self.mode == Task.CLASSIF:
             self.criterion = torch.nn.CrossEntropyLoss()
         elif self.mode == Task.REGRESSION:
@@ -78,51 +81,84 @@ class Learner():
         else:
             def iter_display(x): return
         if valid_loader is None:
-            train_loader, valid_loader = random_split(train_loader, [.9, .1])
-        losses = {"valid": [],
-                  "train": []}
+            train_subset, valid_subset = random_split(train_loader.dataset,
+                                                      self.ratio_train_valid)
+
+            train_loader = DataLoader(train_subset,
+                                      batch_size=train_loader.batch_size,
+                                      shuffle=True)
+            valid_loader = DataLoader(valid_subset,
+                                      batch_size=len(valid_subset),
+                                      shuffle=False)
+
+        self.losses = {"valid": [],
+                       "train": []}
+        self.scores = {"valid": [],
+                       "train": []}
 
         self.model.train()
-        for epoch in iter_display(range(1, self.max_nb_epochs)):
+        for epoch in iter_display(range(0, self.max_nb_epochs)):
             self.model.train()
-            loss_epoch = 0.0
+            loss_train = 0.0
             for data in train_loader:  # Iterate in batches over the training dataset.
                 # Perform a single forward pass.
                 loss = self._compute_loss_batch(data)
-                loss_epoch += loss.item()
+                loss_train += loss.item()
                 loss.backward()  # Derive gradients.
                 self.optimizer.step()  # Update parameters based on gradients.
                 self.optimizer.zero_grad()  # Clear gradients.
             # Calcul de la loss en valid
-            loss_epoch = loss_epoch/len(train_loader.dataset)
+            loss_train = loss_train/len(train_loader.dataset)
             self.model.eval()
             loss_valid = 0.0
             for data_valid in valid_loader:
                 loss = self._compute_loss_batch(data_valid)
                 loss_valid += loss.item()
             loss_valid = loss_valid/len(valid_loader.dataset)
+
+            score_train = self.score(train_loader, current=True)
+            score_valid = self.score(valid_loader, current=True)
+
             if verbose:
-                tqdm.write(f"{epoch} : {loss_epoch}", end="\r")
+                tqdm.write(f"{epoch} : {loss_train}", end="\r")
             if wandb_log:
-                wandb.log({"train/loss": loss_epoch,
-                           "valid/loss": loss_valid})
+                wandb.log({"train/loss": loss_train,
+                           "valid/loss": loss_valid,
+                           "valid/score": score_valid,
+                           "train/score": score_train})
 
             # sauvegarde du meilleur modele
             if (epoch > 1):
-                if (loss_valid < min(losses['valid'])):
+                if (loss_valid < min(self.losses['valid'])):
                     torch.save(self.model, 'best_model.pth')
                     self.best_model = torch.load('best_model.pth')
                     self.best_model.eval()
-            losses['train'].append(loss_epoch)
-            losses['valid'].append(loss_valid)
+                    self.best_epoch = epoch
+
+            self.losses['train'].append(loss_train)
+            self.losses['valid'].append(loss_valid)
+            self.scores['train'].append(score_train)
+            self.scores['valid'].append(score_valid)
 
             # test patience (a tester sur val/train et loss/acc)
-            if (epoch > self.patience) and np.argmin(losses['valid'][-self.patience:]) == 0:
+            if (epoch > self.patience) and np.argmin(self.losses['valid'][-self.patience:]) == 0:
                 # Pas de meilleur loss sur les patience dernieres epochs
                 # reste à retourner le bon modele !
-                return losses
+                return
 
-        return losses
+        return
+
+    def min_loss(self):
+        """
+        returns optimal losses on train and valid according to patience
+        """
+        return self.losses['train'][self.best_epoch], self.losses['valid'][self.best_epoch]
+
+    def best_score(self):
+        """
+        returns optimal losses on train and valid according to patience
+        """
+        return self.scores['train'][self.best_epoch], self.scores['valid'][self.best_epoch]
 
     def _compute_loss_batch(self, data):
         '''
@@ -137,44 +173,49 @@ class Learner():
 
         return loss
 
-    def _predict_batch(self, data_batch):
+    def _predict_batch(self, data_batch, model=None):
         """
-        test mode. Use the best model
+        test mode. Use the best model by default otherwise model if specified
         """
-        out = self.best_model(
+        if model is None:
+            model = self.best_model
+        out = model(
             data_batch.x, data_batch.edge_index, data_batch.batch)
         if self.mode == Task.CLASSIF:
             out = out.argmax(dim=1)
         return out
 
-    def predict(self, loader):
+    def predict(self, loader, model):
         """
         returns the predictions for data in loader, one item by batch
         """
-        self.best_model.eval()  # redondant
+        model.eval()  # redondant
         predictions = []
         # Iterate in batches over the training/test dataset.
         for data in loader:
-            predictions.append(self._predict_batch(data))
+            predictions.append(self._predict_batch(data, model))
         return predictions
 
-    def score(self, loader):
+    def score(self, loader, current=False):
+        model = self.best_model
+        if current:
+            model = self.model
         if self.mode == Task.CLASSIF:
-            return self._score_clf(loader)
-        return self._score_reg(loader)
+            return self._score_clf(loader, model)
+        return self._score_reg(loader, model)
 
-    def _score_reg(self, loader):
+    def _score_reg(self, loader, model):
         pred = []
         gt = []
         for data in loader:
-            pred.extend(self._predict_batch(data))
+            pred.extend(self._predict_batch(data, model))
             gt.extend(data.y)
 
         return rmse(np.array([i.item() for i in gt]),
                     np.array([i.item() for i in pred]))
 
-    def _score_clf(self, loader):
-        preds = self.predict(loader)
+    def _score_clf(self, loader, model):
+        preds = self.predict(loader, model)
         correct = 0.0
         for batch, data in enumerate(loader):
             correct += nb_correct_classif(preds[batch], data.y)
