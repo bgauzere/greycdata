@@ -8,12 +8,10 @@
 import json
 import numpy as np
 import pickle
-import matplotlib.pyplot as plt
 from torch_geometric.loader import DataLoader
-from torch.nn import Linear, ReLU
-from torch_geometric.nn import Sequential, GCNConv
-from torch_geometric.nn import global_add_pool, global_max_pool
 import wandb
+import random
+import torch
 
 from greycdata.datasets import GreycDataset
 from mygnn.learner import Learner, Task
@@ -38,6 +36,10 @@ def main():
     print(data.x)
 
     models = {}
+
+    seed = random.randint(0, 32492)
+    torch.manual_seed(seed)
+    np.random.seed(seed)
 
     with open("config.json", "r") as f:
         config_learning = json.load(f)
@@ -96,14 +98,16 @@ def main():
         test_loader = DataLoader(
             test_dataset, batch_size=32, shuffle=False)
 
-        config_xp = {"architecture": name, "mode": "valid"}
+        config_xp = {"architecture": name, "mode": "valid", "seed": seed}
 
+        # Train/Valid to evaluate perf of hyperparameters
         for xp_valid in range(10):
+
             wandb.init(project='gnn_greyc', config=model_params |
                        config_learning | config_xp,
                        group=group_name+"_"+name)
             learner.reset()
-            # Pas de valid/test pour l'instant !
+            # pas de train/valid predétermine
             learner.train(
                 train_loader,
                 wandb_log=True)
@@ -112,6 +116,8 @@ def main():
 
             results[name]["train"].append(rmse_train)
             results[name]["valid"].append(rmse_valid)
+            wandb.log({"train/best_rmse": rmse_train,
+                       "valid/best_rmse": rmse_valid})
             wandb.finish()
 
         results[name]["mean_train"] = np.mean(results[name]["train"])
@@ -119,6 +125,7 @@ def main():
         results[name]["mean_valid"] = np.mean(results[name]["valid"])
         results[name]["std_valid"] = np.std(results[name]["valid"])
 
+        # Evaluate on test set
         config_xp["mode"] = "test"
         for xp_test in range(3):
             wandb.init(project='gnn_greyc', config=model_params |
@@ -126,23 +133,21 @@ def main():
                        group=group_name+"_"+name)
 
             learner.reset()
-            # Pas de valid/test pour l'instant !
             learner.train(
                 train_loader,
                 wandb_log=True)
-
+            # eval
             rmse_train, rmse_valid = learner.best_score()
             rmse_test = learner.score(test_loader)
+            # log
             results[name]["train"].append(rmse_train)
             results[name]["valid"].append(rmse_valid)
             results[name]["test"].append(rmse_test)
+            wandb.log({"train/rmse": rmse_train,
+                       "valid/rmse": rmse_valid,
+                       "test/rmse": rmse_test})
 
             wandb.finish()
-
-        # wandb.log({"test/mean_rmse": results[name]["mean_test"],
-        #            "test/std_rmse": results[name]["std_test"],
-        #            "train/mean_rmse": results[name]["mean_train"],
-        #            "train/std_rmse": results[name]["std_train"]})
 
     with open("results.pickle", "wb") as f:
         pickle.dump(results, f)

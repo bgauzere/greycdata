@@ -123,6 +123,7 @@ class Learner():
             if verbose:
                 tqdm.write(f"{epoch} : {loss_train}", end="\r")
             if wandb_log:
+                # log des epochs
                 wandb.log({"train/loss": loss_train,
                            "valid/loss": loss_valid,
                            "valid/score": score_valid,
