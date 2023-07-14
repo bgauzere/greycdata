@@ -6,7 +6,7 @@
 		"learning_rate": 0.03,
 		"batch_size_train": 32,
 		"models" : {
-				"GCN" :
+				"GCN_128" :
 				{
 						"class" : "GCN_reg",
 						"init_params":
@@ -15,7 +15,36 @@
 								"input_channels": 15
 						}
 				},
-				"GAT" :
+				"GCN_64" :
+				{
+						"class" : "GCN_reg",
+						"init_params":
+						{
+								"hidden_channels": 64,
+								"input_channels": 15
+						}
+				},
+				"GCN_32" :
+				{
+						"class" : "GCN_reg",
+						"init_params":
+						{
+								"hidden_channels": 32,
+								"input_channels": 15
+						}
+				},
+
+				"GCN_256" :
+				{
+						"class" : "GCN_reg",
+						"init_params":
+						{
+								"hidden_channels": 256,
+								"input_channels": 15
+						}
+				},
+				
+								"GAT_128" :
 				{
 						"class" : "GAT_reg",
 						"init_params":
@@ -24,7 +53,36 @@
 								"input_channels": 15
 						}
 				},
-				"DiffPool" :
+				"GAT_64" :
+				{
+						"class" : "GAT_reg",
+						"init_params":
+						{
+								"hidden_channels": 64,
+								"input_channels": 15
+						}
+				},
+				"GAT_32" :
+				{
+						"class" : "GAT_reg",
+						"init_params":
+						{
+								"hidden_channels": 32,
+								"input_channels": 15
+						}
+				},
+
+				"GAT_256" :
+				{
+						"class" : "GAT_reg",
+						"init_params":
+						{
+								"hidden_channels": 256,
+								"input_channels": 15
+						}
+				},
+
+								"DiffPool_128" :
 				{
 						"class" : "DiffPool_reg",
 						"init_params":
@@ -32,6 +90,35 @@
 								"hidden_channels": 128,
 								"input_channels": 15
 						}
+				},
+				"DiffPool_64" :
+				{
+						"class" : "DiffPool_reg",
+						"init_params":
+						{
+								"hidden_channels": 64,
+								"input_channels": 15
+						}
+				},
+				"DiffPool_32" :
+				{
+						"class" : "DiffPool_reg",
+						"init_params":
+						{
+								"hidden_channels": 32,
+								"input_channels": 15
+						}
+				},
+
+				"DiffPool_256" :
+				{
+						"class" : "DiffPool_reg",
+						"init_params":
+						{
+								"hidden_channels": 256,
+								"input_channels": 15
+						}
 				}
+			
 		}
 }
