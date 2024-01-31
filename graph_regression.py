@@ -15,8 +15,9 @@ import torch
 
 from greycdata.datasets import GreycDataset
 from mygnn.learner import Learner, Task
-from mygnn.models import GCN_reg, GAT_reg, DiffPool_reg, TopKPool_reg
+from mygnn.models import GNN_reg, GCN_reg, GAT_reg, DiffPool_reg, TopKPool_reg
 
+import sys
 
 def main():
     dataset = GreycDataset(name='Acyclic', root='data/Acyclic')
@@ -40,8 +41,11 @@ def main():
     seed = random.randint(0, 32492)
     torch.manual_seed(seed)
     np.random.seed(seed)
-
-    with open("config.json", "r") as f:
+    config_file = "config.json"
+    if len(sys.argv) > 1:
+        config_file = sys.argv[1]
+    
+    with open(config_file, "r") as f:
         config_learning = json.load(f)
 
     # config_learning = {

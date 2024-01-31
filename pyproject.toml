@@ -1,11 +1,21 @@
+[tool.poetry]
+name = "greycdata"
+version = "0.1.0"
+description = ""
+authors = ["Gauzere Benoit <benoit.gauzere@insa-rouen.fr>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+torch-geometric = "^2.4.0"
+
+
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-# requires = ["setuptools>=61.0"]
-# build-backend = "setuptools.build_meta"
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
 
 [project]
-name = "greycdata_bgauzere"
+name = "greycdata"
 version = "0.0.8"
 authors = [
   { name="Benoit Gaüzère", email="benoit.gauzere@insa-rouen.fr" },
@@ -25,7 +35,6 @@ classifiers = [
 
 [tool.setuptools]
 include-package-data = true
-
 
 
 [tool.hatch.build.targets.wheel]

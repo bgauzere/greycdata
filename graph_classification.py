@@ -11,7 +11,7 @@ from torch_geometric.loader import DataLoader
 from greycdata.datasets import GreycDataset
 from mygnn.learner import Learner, Task
 
-from mygnn.models import GCN_clf
+from mygnn.models import GNN_clf
 
 RATIO_TRAIN = .9
 
@@ -56,14 +56,16 @@ def main():
         print(data)
         print()
 
-    model = GCN_clf(input_channels=dataset.num_features,
+    model = GNN_clf(input_channels=dataset.num_features,
                     hidden_channels=128)
 
-    learner = Learner(model)
+    learner = Learner(model,max_nb_epochs=100)
     losses = []
 
-    losses = learner.train(train_loader, nb_epochs=1000)
-    plt.plot(losses)
+    learner.train(train_loader)
+    plt.plot(learner.losses["train"],label="train")
+    plt.plot(learner.losses["valid"],label="valid")
+    plt.legend()
     plt.show()
     acc_train = learner.score(train_loader)
     print(f"Accuracy on train set :{acc_train:.2f}")

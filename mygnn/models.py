@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 from torch.nn import Linear
+
+from torch_geometric.nn import GCN 
 from torch_geometric.nn import GCNConv, GATv2Conv, GINConv
 from torch_geometric.nn import global_add_pool, global_max_pool
 from torch_geometric.nn import TopKPooling
@@ -8,33 +10,62 @@ from torch_geometric.nn import Sequential
 from torch_geometric.nn.dense import dense_diff_pool, DenseGCNConv
 from torch_geometric.utils import to_dense_adj, to_dense_batch, dense_to_sparse
 
-
-class GCN_clf(torch.nn.Module):
-    def __init__(self, input_channels, hidden_channels, num_classes=2):
+class GNN_clf(torch.nn.Module):
+    def __init__(self, input_channels, hidden_channels, num_classes=2,
+                 conv=GCN, pool=global_add_pool,
+                 num_layers = 2):
         super().__init__()
-        self.conv1 = GCNConv(input_channels, hidden_channels)
-        self.conv2 = GCNConv(hidden_channels, hidden_channels)
-        self.lin = Linear(hidden_channels, num_classes)
-        self.pool = global_add_pool
+        self.conv = conv(input_channels, hidden_channels, 
+                         num_layers=num_layers,
+                           out_channels=num_classes)
+        self.pool = pool
         self.config = {'hidden_channels': hidden_channels,
-                       'nb_conv_layers': 2,
-                       'pooling': self.pool}
-
+                       'nb_conv_layers': num_layers,
+                       'pooling': self.pool,
+                       'conv':self.conv}
+        
     def reset_parameters(self):
-        self.conv1.reset_parameters()
-        self.conv2.reset_parameters()
-        self.lin.reset_parameters()
+        self.conv.reset_parameters()
 
-    def forward(self, x, edge_index, batch):
-        x = self.conv1(x, edge_index)
-        x = x.relu()
-        x = self.conv2(x, edge_index)
-
+    def forward(self,x, edge_index, batch):
+        """
+        data : DataLoader
+        """
+        x = self.conv(x, edge_index)
         x = self.pool(x, batch)
-        x = self.lin(x)
         return x
 
 
+class GNN_reg(torch.nn.Module):
+    """
+    Module generique pour intégrer n'importe quel modele de pytorch geometric (https://pytorch-geometric.readthedocs.io/en/latest/modules/nn.html#models)
+    """
+    def __init__(self, input_channels, hidden_channels,
+                 conv=GCN, pool=global_add_pool,
+                 num_layers = 2):
+        super().__init__()
+        self.conv = conv(input_channels, hidden_channels, 
+                         num_layers=num_layers,
+                           out_channels=1)
+        self.pool = pool
+        self.config = {'hidden_channels': hidden_channels,
+                       'nb_conv_layers': num_layers,
+                       'pooling': self.pool,
+                       'conv':self.conv}
+        
+    def reset_parameters(self):
+        self.conv.reset_parameters()
+
+    def forward(self,x, edge_index, batch):
+        """
+        data : DataLoader
+        """
+        x = self.conv(x, edge_index)
+        x = self.pool(x, batch)
+        return x
+
+
+        
 class GCN_reg(torch.nn.Module):
     def __init__(self, input_channels, hidden_channels, pool=global_add_pool):
         super().__init__()
