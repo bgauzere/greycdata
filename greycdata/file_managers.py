@@ -528,14 +528,23 @@ class DataLoader():
         return g, label_names
 
     def load_gxl(self, filename):  # @todo: directed graphs.
-        from os.path import basename
+        from os.path import basename, dirname, join
         import networkx as nx
         import xml.etree.ElementTree as ET
 
         tree = ET.parse(filename)
         root = tree.getroot()
         index = 0
-        g = nx.Graph(filename=basename(filename), name=root[0].attrib['id'])
+
+        graph_id = root[0].attrib['id']
+        needs_ct = graph_id.endswith(".ct")
+        if needs_ct:
+            g, label_names = self.load_ct(join(dirname(filename), graph_id))
+        else:
+            g = nx.Graph(filename=basename(filename), name=graph_id)
+            label_names = {'node_labels': [], 'edge_labels': [],
+                           'node_attrs': [], 'edge_attrs': []}
+
         dic = {}  # used to retrieve incident nodes of edges
         for node in root.iter('node'):
             dic[node.attrib['id']] = index
@@ -557,10 +566,7 @@ class DataLoader():
                 labels[attr.attrib['name']] = attr.attrib['value']
             g.add_edge(dic[edge.attrib['from']],
                        dic[edge.attrib['to']], **labels)
-
-        # get label names.
-        label_names = {'node_labels': [], 'edge_labels': [],
-                       'node_attrs': [], 'edge_attrs': []}
+            
         # @todo: possible loss of label names if some nodes miss some labels.
         for node in root.iter('node'):
             # for datasets "GREC" and "Monoterpens".

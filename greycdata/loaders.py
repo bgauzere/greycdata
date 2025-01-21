@@ -55,6 +55,7 @@ def _load_greyc_networkx_graphs(dataset_name: str):
         "Acyclic": _loader_acyclic,
         "MAO": _loader_mao,
         "PAH": _loader_pah,
+        "Monoterpens": _loader_monoterpens,
     }
     loader_f = loaders.get(dataset_name, None)
     loader = loader_f()
@@ -117,5 +118,16 @@ def _loader_pah():
         os.path.join(ds_path, 'dataset.ds'),
         filename_targets=None,
         dformat='ds', gformat='ct', y_separator=' ')
+    dloader._targets = [int(yi) for yi in dloader.targets]
+    return dloader
+
+def _loader_monoterpens():
+    # Load dataset.
+    rel_path = 'data/Monoterpens/'
+    ds_path = os.path.join(PATH, rel_path)
+    dloader = DataLoader(
+        os.path.join(ds_path, 'dataset.ds'),
+        filename_targets=None,
+        dformat='ds', gformat='gxl', y_separator=' ')
     dloader._targets = [int(yi) for yi in dloader.targets]
     return dloader
