@@ -50,9 +50,12 @@ def _load_greyc_networkx_graphs(dataset_name: str):
        list of nx graphs
        list of properties (float or int)
     """
-    loaders = {"Alkane": _loader_alkane,
-               "Acyclic": _loader_acyclic,
-               "MAO": _loader_mao}
+    loaders = {
+        "Alkane": _loader_alkane,
+        "Acyclic": _loader_acyclic,
+        "MAO": _loader_mao,
+        "PAH": _loader_pah,
+    }
     loader_f = loaders.get(dataset_name, None)
     loader = loader_f()
     if loader is None:
@@ -98,6 +101,17 @@ def _loader_acyclic():
 def _loader_mao():
     # Load dataset.
     rel_path = 'data/MAO/'
+    ds_path = os.path.join(PATH, rel_path)
+    dloader = DataLoader(
+        os.path.join(ds_path, 'dataset.ds'),
+        filename_targets=None,
+        dformat='ds', gformat='ct', y_separator=' ')
+    dloader._targets = [int(yi) for yi in dloader.targets]
+    return dloader
+
+def _loader_pah():
+    # Load dataset.
+    rel_path = 'data/PAH/'
     ds_path = os.path.join(PATH, rel_path)
     dloader = DataLoader(
         os.path.join(ds_path, 'dataset.ds'),

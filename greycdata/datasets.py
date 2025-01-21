@@ -19,7 +19,7 @@ class GreycDataset(InMemoryDataset):
         """
         name : Acyclic, Alkane or MAO, depending on dataset to load
         """
-        if name not in ["Alkane", "Acyclic", "MAO"]:
+        if name not in ["Alkane", "Acyclic", "MAO", "PAH"]:
             raise DatasetNotFoundError(f"Dataset '{name}' not found")
         self.name = name
         super().__init__(root, transform, pre_transform, pre_filter)
