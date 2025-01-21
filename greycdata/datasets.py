@@ -1,7 +1,7 @@
 import torch
 from torch_geometric.data import InMemoryDataset, download_url
 from torch_geometric.utils import from_networkx
-from greycdata.loaders import load_alkane, load_acyclic, load_MAO
+from greycdata.loaders import load_dataset
 
 # https://pytorch-geometric.readthedocs.io/en/latest/notes/create_dataset.html#creating-in-memory-datasets
 
@@ -19,6 +19,8 @@ class GreycDataset(InMemoryDataset):
         """
         name : Acyclic, Alkane or MAO, depending on dataset to load
         """
+        if name not in ["Alkane", "Acyclic", "MAO"]:
+            raise DatasetNotFoundError(f"Dataset '{name}' not found")
         self.name = name
         super().__init__(root, transform, pre_transform, pre_filter)
         self.data, self.slices = torch.load(self.processed_paths[0])
@@ -33,24 +35,10 @@ class GreycDataset(InMemoryDataset):
     @property
     def processed_file_names(self):
         return ['data.pt']
-
-    def _load_data(self):
-        """
-        Load the right data according to initializer
-        """
-        load_dic = {
-            'Alkane': load_alkane,
-            'Acyclic': load_acyclic,
-            'MAO': load_MAO,
-        }
-        load_data = load_dic.get(self.name, None)
-        if load_data is None:
-            raise DatasetNotFoundError("Dataset not found")
-        return load_data()
-
+    
     def process(self):
         # Read data into huge `Data` list.
-        graph_list, property_list = self._load_data()
+        graph_list, property_list = load_dataset(self.name)
         # Convert to PyG.
 
         def from_nx_to_pyg(graph, y):

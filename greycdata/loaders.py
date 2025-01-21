@@ -8,12 +8,6 @@ from greycdata.file_managers import DataLoader
 from greycdata.utils import one_hot_encode
 
 
-class DatasetName(str, Enum):
-    ALKANE = "Alkane"
-    ACYCLIC = "Acyclic"
-    MAO = "MAO"
-
-
 PATH = os.path.dirname(__file__)
 
 
@@ -46,7 +40,7 @@ def prepare_graph(graph, atom_list=['C', 'N', 'O', 'F', 'P', 'S', 'Cl', 'Br', 'I
     return graph
 
 
-def _load_greyc_networkx_graphs(dataset: DatasetName):
+def _load_greyc_networkx_graphs(dataset_name: str):
     """Load the dataset as a llist of networkx graphs and returns list of graphs and list of properties
 
     Args:
@@ -56,10 +50,10 @@ def _load_greyc_networkx_graphs(dataset: DatasetName):
        list of nx graphs
        list of properties (float or int)
     """
-    loaders = {DatasetName.ALKANE: _loader_alkane,
-               DatasetName.ACYCLIC: _loader_acyclic,
-               DatasetName.MAO: _loader_mao}
-    loader_f = loaders.get(dataset, None)
+    loaders = {"Alkane": _loader_alkane,
+               "Acyclic": _loader_acyclic,
+               "MAO": _loader_mao}
+    loader_f = loaders.get(dataset_name, None)
     loader = loader_f()
     if loader is None:
         raise Exception("Dataset Not Found")
@@ -68,16 +62,8 @@ def _load_greyc_networkx_graphs(dataset: DatasetName):
     return graphs, loader.targets
 
 
-def load_alkane():
-    return _load_greyc_networkx_graphs(DatasetName.ALKANE)
-
-
-def load_acyclic():
-    return _load_greyc_networkx_graphs(DatasetName.ACYCLIC)
-
-
-def load_MAO():
-    return _load_greyc_networkx_graphs(DatasetName.MAO)
+def load_dataset(dataset_name: str):
+    return _load_greyc_networkx_graphs(dataset_name)
 
 
 def _loader_alkane():
