@@ -11,6 +11,14 @@ from greycdata.utils import one_hot_encode
 PATH = os.path.dirname(__file__)
 
 
+def get_atom_list(graphs):
+    atom_set = set()
+    for graph in graphs:
+        for node in graph.nodes:
+            atom_set.add(graph.nodes[node]['atom_symbol'])
+    return list(atom_set)
+
+
 def prepare_graph(graph, atom_list=['C', 'N', 'O', 'F', 'P', 'S', 'Cl', 'Br', 'I', 'H']):
     """
     Prepare graph to include all data before pyg conversion
@@ -62,7 +70,8 @@ def _load_greyc_networkx_graphs(dataset_name: str):
     if loader is None:
         raise Exception("Dataset Not Found")
 
-    graphs = [prepare_graph(graph) for graph in loader.graphs]
+    atom_list = get_atom_list(loader.graphs)
+    graphs = [prepare_graph(graph, atom_list) for graph in loader.graphs]
     return graphs, loader.targets
 
 
