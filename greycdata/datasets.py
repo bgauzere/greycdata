@@ -38,14 +38,15 @@ class GreycDataset(InMemoryDataset):
         """
         Load the right data according to initializer
         """
-        if self.name == 'Alkane':
-            return load_alkane()
-        elif self.name == 'Acyclic':
-            return load_acyclic()
-        elif self.name == 'MAO':
-            return load_MAO()
-        else:
+        load_dic = {
+            'Alkane': load_alkane,
+            'Acyclic': load_acyclic,
+            'MAO': load_MAO,
+        }
+        load_data = load_dic.get(self.name, None)
+        if load_data is None:
             raise DatasetNotFoundError("Dataset not found")
+        return load_data()
 
     def process(self):
         # Read data into huge `Data` list.
