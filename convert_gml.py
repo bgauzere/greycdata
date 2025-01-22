@@ -3,7 +3,6 @@ Conversion for molecules graphs between `torch_geometric.data.Data` and `gml` fi
 """
 
 import os
-import io
 from typing import Optional
 import shutil
 import zipfile
@@ -54,6 +53,7 @@ def data_to_gml(data: Data, output: Optional[str] = None) -> Optional[str]:
         return content
 
     nx.write_gml(g, output)
+    return None
 
 def gml_to_data(gml: str, gml_file: bool = True) -> Data:
     """
