@@ -132,3 +132,13 @@ def dataset_to_gml(dataset_name: str, output: str, zip_output: bool = False) -> 
 
     print(f"Dataset {dataset_name} fully converted")
     shutil.rmtree(dataset_dir)
+
+def main() -> None:
+    """Main script"""
+    datasets = {"Acyclic", "Alkane", "MAO", "Monoterpens", "PAH"}
+    for dataset in datasets:
+        print(f"======= Converting {dataset} =======")
+        dataset_to_gml(dataset, dataset.lower(), True)
+
+if __name__ == "__main__":
+    main()
