@@ -41,21 +41,19 @@ def data_to_gml(data: Data, output: Optional[str] = None) -> Optional[str]:
         g.add_edge(
             src.item(),
             dst.item(),
-            edge_attr=data.edge_attr[index].item()
+            edge_attr=data.edge_attr[index].tolist()
         )
 
     g.graph["y"] = data.y.item()
 
     if output is None:
-        output = io.StringIO()
+        content = ""
+        gml = nx.generate_gml(g)
+        for line in gml:
+            content += line + '\n'
+        return content
+
     nx.write_gml(g, output)
-
-    if isinstance(output, io.StringIO):
-        result = output.getvalue()
-        output.close()
-        return result
-
-    return None
 
 def gml_to_data(gml: str, gml_file: bool = True) -> Data:
     """
@@ -82,9 +80,7 @@ def gml_to_data(gml: str, gml_file: bool = True) -> Data:
             raise FileNotFoundError(f"File `{gml}` does not exist")
         g: nx.Graph = nx.read_gml(gml)
     else:
-        buffer = io.StringIO(gml)
-        g: nx.Graph = nx.read_gml(buffer)
-        buffer.close()
+        g: nx.Graph = nx.parse_gml(gml)
 
     x, edge_index, edge_attr = [], [], []
 
@@ -116,19 +112,20 @@ def dataset_to_gml(dataset_name: str, output: str, zip_output: bool = False) -> 
     * `zip_output`   : creates a zip file of the output file is set to `True`
     """
     dataset_dir = f"{dataset_name}_tmp"
-    os.mkdir(dataset_dir)
+    if not os.path.exists(dataset_dir):
+        os.mkdir(dataset_dir)
 
     dataset = GreycDataset(dataset_dir, dataset_name)
     gml_contents = [data_to_gml(data) for data in tqdm(dataset)]
 
-    with open(output, 'w', encoding="utf8") as f:
+    with open(output, "w", encoding="utf8") as f:
         for gml_content in gml_contents[:-1]:
             f.write(gml_content)
             f.write(f"\n{GML_SEPARATOR}\n")
         f.write(gml_contents[-1])
 
     if zip_output:
-        with zipfile.ZipFile(f"{os.path.splitext(output)[0]}.zip") as zipf:
+        with zipfile.ZipFile(f"{os.path.splitext(output)[0]}.zip", 'w') as zipf:
             zipf.write(output)
         os.remove(output)
 
