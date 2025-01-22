@@ -3,13 +3,17 @@ Conversion for molecules graphs between `torch_geometric.data.Data` and `gml` fi
 """
 
 import os
-import sys
 import io
 from typing import Optional
+import shutil
 import zipfile
+from tqdm import tqdm
 import networkx as nx
 import torch
 from torch_geometric.data import Data
+from greycdata.datasets import GreycDataset
+
+GML_SEPARATOR = "---"
 
 def data_to_gml(data: Data, output: Optional[str] = None) -> Optional[str]:
     """
@@ -97,3 +101,34 @@ def gml_to_data(gml: str, gml_file: bool = True) -> Data:
     edge_attr = torch.tensor(edge_attr, dtype=torch.long)
 
     return Data(x=x, edge_attr=edge_attr, edge_index=edge_index)
+
+def dataset_to_gml(dataset_name: str, output: str, zip_output: bool = False) -> None:
+    """
+    Coverts a whole dataset from `GreycDataset` into a gml format
+
+    Parameters :
+    ------------
+
+    * `dataset_name` : name of the greyc dataset
+    * `output`       : name of the output gml file
+    * `zip_output`   : creates a zip file of the output file is set to `True`
+    """
+    dataset_dir = f"{dataset_name}_tmp"
+    os.mkdir(dataset_dir)
+
+    dataset = GreycDataset(dataset_dir, dataset_name)
+    gml_contents = [data_to_gml(data) for data in tqdm(dataset)]
+
+    with open(output, 'w') as f:
+        for gml_content in gml_contents[:-1]:
+            f.write(gml_content)
+            f.write(f"\n{GML_SEPARATOR}\n")
+        f.write(gml_contents[-1])
+
+    if zip_output:
+        with zipfile.ZipFile(f"{os.path.splitext()[0]}.zip") as zipf:
+            zipf.write(output)
+        os.remove(output)
+
+    print(f"Dataset {dataset_name} fully converted")
+    shutil.rmtree(dataset_dir)
