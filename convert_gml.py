@@ -55,6 +55,8 @@ def data_to_gml(data: Data, output: Optional[str] = None) -> Optional[str]:
         output.close()
         return result
 
+    return None
+
 def gml_to_data(gml: str, gml_file: bool = True) -> Data:
     """
     Reads a `gml` file and creates a `Data` object
@@ -100,7 +102,7 @@ def gml_to_data(gml: str, gml_file: bool = True) -> Data:
     edge_index = torch.tensor(edge_index, dtype=torch.long)
     edge_attr = torch.tensor(edge_attr, dtype=torch.long)
 
-    return Data(x=x, edge_attr=edge_attr, edge_index=edge_index)
+    return Data(x=x, edge_attr=edge_attr, edge_index=edge_index, y=y)
 
 def dataset_to_gml(dataset_name: str, output: str, zip_output: bool = False) -> None:
     """
@@ -119,14 +121,14 @@ def dataset_to_gml(dataset_name: str, output: str, zip_output: bool = False) -> 
     dataset = GreycDataset(dataset_dir, dataset_name)
     gml_contents = [data_to_gml(data) for data in tqdm(dataset)]
 
-    with open(output, 'w') as f:
+    with open(output, 'w', encoding="utf8") as f:
         for gml_content in gml_contents[:-1]:
             f.write(gml_content)
             f.write(f"\n{GML_SEPARATOR}\n")
         f.write(gml_contents[-1])
 
     if zip_output:
-        with zipfile.ZipFile(f"{os.path.splitext()[0]}.zip") as zipf:
+        with zipfile.ZipFile(f"{os.path.splitext(output)[0]}.zip") as zipf:
             zipf.write(output)
         os.remove(output)
 
