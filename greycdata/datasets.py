@@ -68,17 +68,42 @@ class GreycDataset(InMemoryDataset):
         # Convert to PyG.
         def from_nx_to_pyg(graph, y):
             """
-            Convert networkx graph to pytorch graph and add y
+            Converts Networkx Graph to a PyTorch Graph and adds y
             """
+            node_attrs, edge_attrs = None, None
+            for node in graph.nodes:
+                node_attrs = graph.nodes[node].keys()
+                break
+            if graph.edges:
+                for edge in graph.edges:
+                    edge_attrs = graph.edges[edge].keys()
+                    break
             pyg_graph = from_networkx(
                 graph, 
-                group_node_attrs=['atom_symbol', 'degree', 'x', 'y', 'z']
+                group_node_attrs=node_attrs,
+                group_edge_attrs=edge_attrs,
             )
             pyg_graph.y = y
             return pyg_graph
 
         data_list = [from_nx_to_pyg(graph, y)
                      for graph, y in zip(graph_list, property_list)]
+        
+        # Add edge_attr of size 0 to all graphs that don't have it.
+        # (Only if the dataset has edge attributes)
+        no_edge_attr_data = []
+        dataset_has_edge_attr = False
+        for data in data_list:
+            if data.edge_attr is None:
+                if dataset_has_edge_attr:
+                    data.edge_attr = torch.tensor([])
+                else:
+                    no_edge_attr_data.append(data)
+            else:
+                dataset_has_edge_attr = True
+        if dataset_has_edge_attr:
+            for data in no_edge_attr_data:
+                data.edge_attr = torch.tensor([])
 
         if self.pre_filter is not None:
             data_list = [data for data in data_list if self.pre_filter(data)]
