@@ -54,8 +54,8 @@ class GreycDataset(InMemoryDataset):
         super().__init__(root, transform, pre_transform, pre_filter)
         self.data, self.slices = torch.load(self.processed_paths[0])
 
-    def __str__(self):
-        return self.name
+    def __repr__(self):
+        return f"{self.name}({len(self)})"
 
     @property
     def processed_file_names(self):
