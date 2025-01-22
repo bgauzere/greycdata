@@ -85,6 +85,7 @@ def prepare_graph(
     1.0
     """
     # Convert attributes.
+
     graph.graph = {}
     for node in graph.nodes:
         graph.nodes[node]['atom_symbol'] = one_hot_encode(
@@ -92,11 +93,12 @@ def prepare_graph(
             atom_list,
         ) if len(atom_list) > 1 else []
         graph.nodes[node]['degree'] = float(graph.degree[node])
-        for attr in ['x', 'y', 'z']:
-            graph.nodes[node][attr] = float(graph.nodes[node][attr])
+        for attr in graph.nodes[node]:
+            if attr not in ['atom_symbol', 'degree']:
+                graph.nodes[node][attr] = float(graph.nodes[node][attr])
 
     for edge in graph.edges:
-        for attr in ['bond_type', 'bond_stereo']:
+        for attr in graph.edges[edge]:
             graph.edges[edge][attr] = float(graph.edges[edge][attr])
 
     return graph
