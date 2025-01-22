@@ -54,6 +54,9 @@ class GreycDataset(InMemoryDataset):
         super().__init__(root, transform, pre_transform, pre_filter)
         self.data, self.slices = torch.load(self.processed_paths[0])
 
+        # Deletion of edge attributes duplicates
+        self.data.edge_attr = torch.unique(self.data.edge_attr, dim=1)
+
     def __repr__(self):
         return f"{self.name}({len(self)})"
 
