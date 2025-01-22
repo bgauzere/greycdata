@@ -13,6 +13,32 @@ PATH = os.path.dirname(__file__)
 
 
 def get_atom_list(graphs):
+    """
+    Extract a list of unique atom symbols from a list of NetworkX graphs.
+
+    Parameters
+    ----------
+    graphs : list[networkx.Graph]
+        A list of NetworkX graphs, each containing nodes with an 'atom_symbol' 
+        attribute.
+
+    Returns
+    -------
+    list[str]
+        A list of unique atom symbols found in the nodes of the graphs.
+
+    Examples
+    --------
+    >>> import networkx as nx
+    >>> g1 = nx.Graph()
+    >>> g1.add_node(0, atom_symbol='C')
+    >>> g1.add_node(1, atom_symbol='H')
+    >>> g2 = nx.Graph()
+    >>> g2.add_node(0, atom_symbol='O')
+    >>> g2.add_node(1, atom_symbol='C')
+    >>> get_atom_list([g1, g2])
+    ['C', 'H', 'O']
+    """
     atom_set = set()
     for graph in graphs:
         for node in graph.nodes:
@@ -25,13 +51,38 @@ def prepare_graph(
         atom_list=['C', 'N', 'O', 'F', 'P', 'S', 'Cl', 'Br', 'I', 'H']
     ):
     """
-    Prepare graph to include all data before pyg conversion
+    Prepares a NetworkX graph by encoding node and edge attributes.
+
     Parameters
     ----------
-    graph : networkx graph
-        graph to be prepared
+    graph : networkx.Graph
+        The graph to be prepared. Nodes must have 'atom_symbol', 'x', 'y', 
+        and 'z' attributes. Edges must have 'bond_type' and 'bond_stereo' 
+        attributes.
     atom_list : list[str], optional
-        List of node attributes to be converted into one hot encoding
+        A list of atom symbols to encode using one-hot encoding. Default is 
+        ['C', 'N', 'O', 'F', 'P', 'S', 'Cl', 'Br', 'I', 'H'].
+
+    Returns
+    -------
+    networkx.Graph
+        The modified graph with encoded attributes.
+
+    Examples
+    --------
+    >>> import networkx as nx
+    >>> g = nx.Graph()
+    >>> g.add_node(0, atom_symbol='C', x=0.0, y=0.0, z=0.0)
+    >>> g.add_node(1, atom_symbol='O', x=1.0, y=1.0, z=1.0)
+    >>> g.add_edge(0, 1, bond_type=1, bond_stereo=0)
+    >>> prepare_graph(g, ['C', 'O', 'H'])
+    <networkx.classes.graph.Graph at ...>
+    >>> g.nodes[0]['atom_symbol']
+    [1.0, 0.0, 0.0] # One-hot encoding of 'C'
+    >>> g.nodes[1]['atom_symbol']
+    [0.0, 1.0, 0.0] # One-hot encoding of 'O'
+    >>> g.edges[(0, 1)]['bond_type']
+    1.0
     """
     # Convert attributes.
     graph.graph = {}
@@ -39,8 +90,7 @@ def prepare_graph(
         graph.nodes[node]['atom_symbol'] = one_hot_encode(
             graph.nodes[node]['atom_symbol'],
             atom_list,
-            include_unknown_set=True,
-        )
+        ) if len(atom_list) > 1 else []
         graph.nodes[node]['degree'] = float(graph.degree[node])
         for attr in ['x', 'y', 'z']:
             graph.nodes[node][attr] = float(graph.nodes[node][attr])
@@ -52,34 +102,83 @@ def prepare_graph(
     return graph
 
 
-def load_dataset(dataset_name: str):
-    """Load the dataset as a llist of networkx graphs and returns list of 
-    graphs and list of properties.
+def load_dataset(dataset_name: str, return_atom_list=False):
+    """
+    Loads and prepares (encodes node and edge attributes) a dataset of 
+    molecular graphs and their associated properties.
 
-    Args:
-       dataset_name:str the dataset to load (Alkane,  Acyclic, ...)
+    Parameters
+    ----------
+    dataset_name : str
+        The name of the dataset to load (e.g., 'Alkane', 'Acyclic', etc.).
+    return_atom_list : bool, optional
+        If True, the function also returns the list of unique atom symbols 
+        found in the dataset. Default is False.
 
-    Returns:
-       List of nx graphs
-       List of properties (float or int)
+    Returns
+    -------
+    tuple
+        If `return_atom_list` is False:
+            (list[networkx.Graph], list[float or int])
+            - A list of processed NetworkX graphs.
+            - A list of target properties (e.g., boiling points).
+        If `return_atom_list` is True:
+            (list[networkx.Graph], list[float or int], list[str])
+            - The above two elements, plus a list of unique atom symbols.
+
+    Raises
+    ------
+    ValueError
+        If the dataset name is not found in the metadata.
+
+    Examples
+    --------
+    >>> graphs, targets = load_dataset("Alkane")
+    >>> len(graphs)
+    150  # Example output
+    >>> targets[0]
+    -164.0  # Example boiling point
+
+    >>> _, _, atom_list = load_dataset("Acyclic", return_atom_list=True)
+    >>> atom_list
+    ['C', 'S', 'O']  # Example atom symbols
     """
     if dataset_name not in GREYC_META:
-        raise Exception("Dataset Not Found")
+        raise ValueError(f"Dataset {dataset_name} Not Found.")
     
     loader = loader_dataset(dataset_name)
 
     atom_list = get_atom_list(loader.graphs)
     graphs = [prepare_graph(graph, atom_list) for graph in loader.graphs]
 
+    if return_atom_list:
+        return graphs, loader.targets, atom_list
     return graphs, loader.targets
 
 
 def loader_dataset(dataset_name: str):
     """
-    Load the n graphs of `dataset_name` datasets.
-    Returns two lists:
-    - The n networkx graphs
-    - Boiling points
+    Loads a dataset of molecular graphs and their corresponding properties.
+
+    Parameters
+    ----------
+    dataset_name : str
+        The name of the dataset to load (e.g., 'Alkane', 'Acyclic', etc.).
+
+    Returns
+    -------
+    DataLoader
+        An object containing:
+        - A list of NetworkX graphs representing the molecules.
+        - A list of target properties (e.g., boiling points or classes).
+
+    Examples
+    --------
+    >>> loader = loader_dataset("Alkane")
+    >>> len(loader.graphs)
+    150  # Example number of graphs
+    >>> loader.targets[0]
+    -164.0  # Example boiling point
     """
     metadata = GREYC_META[dataset_name]
     
