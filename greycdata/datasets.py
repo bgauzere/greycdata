@@ -2,6 +2,7 @@ import torch
 from torch_geometric.data import InMemoryDataset, download_url
 from torch_geometric.utils import from_networkx
 from greycdata.loaders import load_dataset
+from greycdata.metadata import GREYC_META
 
 # https://pytorch-geometric.readthedocs.io/en/latest/notes/create_dataset.html#creating-in-memory-datasets
 
@@ -19,7 +20,7 @@ class GreycDataset(InMemoryDataset):
         """
         name : Acyclic, Alkane or MAO, depending on dataset to load
         """
-        if name not in {"Alkane", "Acyclic", "MAO", "PAH", "Monoterpens"}:
+        if name not in GREYC_META:
             raise DatasetNotFoundError(f"Dataset '{name}' not found")
         self.name = name
         super().__init__(root, transform, pre_transform, pre_filter)

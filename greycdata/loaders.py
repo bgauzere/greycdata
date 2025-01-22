@@ -6,6 +6,7 @@ import os
 from enum import Enum
 from greycdata.file_managers import DataLoader
 from greycdata.utils import one_hot_encode
+from greycdata.metadata import GREYC_META
 
 
 PATH = os.path.dirname(__file__)
@@ -19,7 +20,10 @@ def get_atom_list(graphs):
     return list(atom_set)
 
 
-def prepare_graph(graph, atom_list=['C', 'N', 'O', 'F', 'P', 'S', 'Cl', 'Br', 'I', 'H']):
+def prepare_graph(
+        graph, 
+        atom_list=['C', 'N', 'O', 'F', 'P', 'S', 'Cl', 'Br', 'I', 'H']
+    ):
     """
     Prepare graph to include all data before pyg conversion
     Parameters
@@ -48,95 +52,51 @@ def prepare_graph(graph, atom_list=['C', 'N', 'O', 'F', 'P', 'S', 'Cl', 'Br', 'I
     return graph
 
 
-def _load_greyc_networkx_graphs(dataset_name: str):
-    """Load the dataset as a llist of networkx graphs and returns list of graphs and list of properties
+def load_dataset(dataset_name: str):
+    """Load the dataset as a llist of networkx graphs and returns list of 
+    graphs and list of properties.
 
     Args:
-       dataset:str the dataset to load (Alkane,Acyclic,...)
+       dataset_name:str the dataset to load (Alkane,  Acyclic, ...)
 
     Returns:
-       list of nx graphs
-       list of properties (float or int)
+       List of nx graphs
+       List of properties (float or int)
     """
-    loaders = {
-        "Alkane": _loader_alkane,
-        "Acyclic": _loader_acyclic,
-        "MAO": _loader_mao,
-        "PAH": _loader_pah,
-        "Monoterpens": _loader_monoterpens,
-    }
-    loader_f = loaders.get(dataset_name, None)
-    loader = loader_f()
-    if loader is None:
+    if dataset_name not in GREYC_META:
         raise Exception("Dataset Not Found")
+    
+    loader = loader_dataset(dataset_name)
 
     atom_list = get_atom_list(loader.graphs)
     graphs = [prepare_graph(graph, atom_list) for graph in loader.graphs]
+
     return graphs, loader.targets
 
 
-def load_dataset(dataset_name: str):
-    return _load_greyc_networkx_graphs(dataset_name)
-
-
-def _loader_alkane():
+def loader_dataset(dataset_name: str):
     """
-    Load the 150 graphs of Alkane datasets
-    returns two lists
-    - 150 networkx graphs
-    - boiling points
+    Load the n graphs of `dataset_name` datasets.
+    Returns two lists:
+    - The n networkx graphs
+    - Boiling points
     """
-    # Load dataset.
-    rel_path = 'data/Alkane/'
-    ds_path = os.path.join(PATH, rel_path)
+    metadata = GREYC_META[dataset_name]
+    
+    ds_path = os.path.join(PATH, "data", dataset_name)
+    if metadata["filename_targets"] is not None:
+        filename_targets = os.path.join(ds_path, metadata["filename_targets"])
+    else:
+        filename_targets = None
+
     dloader = DataLoader(
-        os.path.join(ds_path, 'dataset.ds'),
-        filename_targets=os.path.join(
-            ds_path, 'dataset_boiling_point_names.txt'),
-        dformat='ds', gformat='ct', y_separator=' ')
-    return dloader
+        os.path.join(ds_path, metadata["filename_dataset"]),
+        filename_targets=filename_targets,
+        dformat=metadata["dformat"], 
+        gformat=metadata["gformat"], 
+        y_separator=metadata["y_separator"])
+    
+    if metadata["task_type"] == "classification":
+        dloader._targets = [int(yi) for yi in dloader.targets]
 
-
-def _loader_acyclic():
-    # Load dataset.
-    rel_path = 'data/Acyclic/'
-    ds_path = os.path.join(PATH, rel_path)
-    dloader = DataLoader(
-        os.path.join(ds_path, 'dataset_bps.ds'),
-        filename_targets=None,
-        dformat='ds', gformat='ct', y_separator=' ')
-    return dloader
-
-
-def _loader_mao():
-    # Load dataset.
-    rel_path = 'data/MAO/'
-    ds_path = os.path.join(PATH, rel_path)
-    dloader = DataLoader(
-        os.path.join(ds_path, 'dataset.ds'),
-        filename_targets=None,
-        dformat='ds', gformat='ct', y_separator=' ')
-    dloader._targets = [int(yi) for yi in dloader.targets]
-    return dloader
-
-def _loader_pah():
-    # Load dataset.
-    rel_path = 'data/PAH/'
-    ds_path = os.path.join(PATH, rel_path)
-    dloader = DataLoader(
-        os.path.join(ds_path, 'dataset.ds'),
-        filename_targets=None,
-        dformat='ds', gformat='ct', y_separator=' ')
-    dloader._targets = [int(yi) for yi in dloader.targets]
-    return dloader
-
-def _loader_monoterpens():
-    # Load dataset.
-    rel_path = 'data/Monoterpens/'
-    ds_path = os.path.join(PATH, rel_path)
-    dloader = DataLoader(
-        os.path.join(ds_path, 'dataset.ds'),
-        filename_targets=None,
-        dformat='ds', gformat='gxl', y_separator=' ')
-    dloader._targets = [int(yi) for yi in dloader.targets]
     return dloader
