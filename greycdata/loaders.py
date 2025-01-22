@@ -190,12 +190,19 @@ def loader_dataset(dataset_name: str):
     else:
         filename_targets = None
 
+    if 'extra_params' in metadata:
+        kwargs = metadata['extra_params']
+    else:
+        kwargs = {}
+
     dloader = DataLoader(
         os.path.join(ds_path, metadata["filename_dataset"]),
         filename_targets=filename_targets,
         dformat=metadata["dformat"], 
         gformat=metadata["gformat"], 
-        y_separator=metadata["y_separator"])
+        y_separator=metadata["y_separator"],
+        **kwargs
+    )
     
     if metadata["task_type"] == "classification":
         dloader._targets = [int(yi) for yi in dloader.targets]

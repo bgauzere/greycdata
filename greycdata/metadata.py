@@ -1,3 +1,14 @@
+"""
+Module defining metadata for the GREYC datasets.
+
+This metadata dictionary provides information for various datasets, including:
+- Task type (e.g., regression or classification)
+- File names for datasets and targets
+- Data and graph formats
+- Separator used for target values
+- Extra parameters specific to certain datasets
+"""
+
 GREYC_META = {
     'Acyclic': {
         'task_type': 'regression',
