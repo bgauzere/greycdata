@@ -164,10 +164,13 @@ def gml_to_dataset(gml: str) -> List[Data]:
 
 def main() -> None:
     """Main script"""
+    dst = "greycdata/data_gml"
+    if not os.path.exists(dst):
+        os.mkdir(dst)
     datasets = {"Acyclic", "Alkane", "MAO", "Monoterpens", "PAH"}
     for dataset in datasets:
         print(f"======= Converting {dataset} =======")
-        dataset_to_gml(dataset, dataset.lower(), True)
+        dataset_to_gml(dataset, os.path.join(dst, f"{dataset.lower()}.zip"))
 
 if __name__ == "__main__":
     main()
