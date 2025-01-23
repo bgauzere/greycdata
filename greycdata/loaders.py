@@ -47,6 +47,7 @@ def get_atom_list(graphs):
 
 
 def prepare_graph(
+        dataset_name,
         graph, 
         atom_list=['C', 'N', 'O', 'F', 'P', 'S', 'Cl', 'Br', 'I', 'H']
     ):
@@ -85,7 +86,6 @@ def prepare_graph(
     1.0
     """
     # Convert attributes.
-
     graph.graph = {}
     for node in graph.nodes:
         graph.nodes[node]['atom_symbol'] = one_hot_encode(
@@ -96,10 +96,16 @@ def prepare_graph(
         for attr in graph.nodes[node]:
             if attr not in ['atom_symbol', 'degree']:
                 graph.nodes[node][attr] = float(graph.nodes[node][attr])
+        # Deletion of node attributes to be removed
+        for rmv in GREYC_META[dataset_name]['remove_node_attrs']:
+            del graph.nodes[node][rmv]
 
     for edge in graph.edges:
         for attr in graph.edges[edge]:
             graph.edges[edge][attr] = float(graph.edges[edge][attr])
+        # Deletion of edge attributes to be removed
+        for rmv in GREYC_META[dataset_name]['remove_edge_attrs']:
+            del graph.edges[edge][rmv]
 
     return graph
 
@@ -151,7 +157,14 @@ def load_dataset(dataset_name: str, return_atom_list=False):
     loader = loader_dataset(dataset_name)
 
     atom_list = get_atom_list(loader.graphs)
-    graphs = [prepare_graph(graph, atom_list) for graph in loader.graphs]
+    graphs = [
+        prepare_graph(
+            dataset_name, 
+            graph, 
+            atom_list,
+        ) 
+        for graph in loader.graphs
+    ]
 
     if return_atom_list:
         return graphs, loader.targets, atom_list
