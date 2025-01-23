@@ -36,10 +36,10 @@ GREYC_META = {
     },
     'Monoterpens': {
         'task_type': 'classification',
-        'filename_dataset': 'dataset.ds',
+        'filename_dataset': 'dataset_ct.ds',
         'filename_targets': None,
         'dformat': 'ds',
-        'gformat': 'gxl',
+        'gformat': 'ct',
         'y_separator': ' ',
     },
     'PAH': {
