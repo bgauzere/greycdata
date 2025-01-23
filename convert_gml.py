@@ -93,6 +93,7 @@ def gml_to_data(gml: str, gml_file: bool = True) -> Data:
         edge_index.append([int(u), int(v)])
         edge_index.append([int(v), int(u)])
         edge_attr.append(attr["edge_attr"])
+        edge_attr.append(attr["edge_attr"])
 
     x = torch.tensor(x, dtype=torch.float)
     edge_index = torch.tensor(edge_index, dtype=torch.long).t().contiguous()
@@ -100,7 +101,7 @@ def gml_to_data(gml: str, gml_file: bool = True) -> Data:
 
     return Data(x=x, edge_attr=edge_attr, edge_index=edge_index, y=y)
 
-def dataset_to_gml(dataset_name: str, output: str, zip_output: bool = False) -> None:
+def dataset_to_gml(dataset_name: str, output: str) -> None:
     """
     Coverts a whole dataset from `GreycDataset` into a gml format
 
@@ -108,8 +109,7 @@ def dataset_to_gml(dataset_name: str, output: str, zip_output: bool = False) -> 
     ------------
 
     * `dataset_name` : name of the greyc dataset
-    * `output`       : name of the output gml file
-    * `zip_output`   : creates a zip file of the output file is set to `True`
+    * `output`       : name of the output gml file (will be zipped if it ends with `.zip`)
     """
     dataset_dir = f"{dataset_name}_tmp"
     if not os.path.exists(dataset_dir):
@@ -124,9 +124,9 @@ def dataset_to_gml(dataset_name: str, output: str, zip_output: bool = False) -> 
             f.write(f"\n{GML_SEPARATOR}\n")
         f.write(gml_contents[-1])
 
-    if zip_output:
+    if os.path.splitext(output)[1] == "zip":
         with zipfile.ZipFile(f"{os.path.splitext(output)[0]}.zip", 'w') as zipf:
-            zipf.write(output)
+            zipf.write(output, output.lower())
         os.remove(output)
 
     print(f"Dataset {dataset_name} fully converted")
