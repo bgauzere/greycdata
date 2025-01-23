@@ -11,6 +11,7 @@ import networkx as nx
 import torch
 from torch_geometric.data import Data
 from greycdata.datasets import GreycDataset
+from greycdata.metadata import GREYC_META
 
 GML_SEPARATOR = "---"
 
@@ -164,10 +165,12 @@ def gml_to_dataset(gml: str) -> List[Data]:
 
 def main() -> None:
     """Main script"""
-    dst = "greycdata/data_gml"
+    current_file_path = os.path.abspath(__file__)
+    current_dir = os.path.dirname(current_file_path)
+    dst = os.path.join(current_dir, "greycdata/data_gml")
     if not os.path.exists(dst):
         os.mkdir(dst)
-    datasets = {"Acyclic", "Alkane", "MAO", "Monoterpens", "PAH"}
+    datasets = GREYC_META.keys()
     for dataset in datasets:
         print(f"======= Converting {dataset} =======")
         dataset_to_gml(dataset, os.path.join(dst, f"{dataset.lower()}.zip"))
