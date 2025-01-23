@@ -128,7 +128,7 @@ def dataset_to_gml(dataset_name: str, output: str) -> None:
 
     if os.path.splitext(output)[1] == ".zip":
         with zipfile.ZipFile(f"{os.path.splitext(output)[0]}.zip", 'w') as zipf:
-            zipf.write(fname, fname.lower())
+            zipf.write(fname, os.path.basename(fname))
         os.remove(fname)
     else:
         os.rename(fname, output)
