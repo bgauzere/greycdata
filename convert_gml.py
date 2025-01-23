@@ -118,16 +118,19 @@ def dataset_to_gml(dataset_name: str, output: str) -> None:
     dataset = GreycDataset(dataset_dir, dataset_name)
     gml_contents = [data_to_gml(data) for data in tqdm(dataset)]
 
-    with open(output, "w", encoding="utf8") as f:
+    fname = f"{os.path.splitext(output)[0]}.gml"
+    with open(fname, "w", encoding="utf8") as f:
         for gml_content in gml_contents[:-1]:
             f.write(gml_content)
             f.write(f"\n{GML_SEPARATOR}\n")
         f.write(gml_contents[-1])
 
-    if os.path.splitext(output)[1] == "zip":
+    if os.path.splitext(output)[1] == ".zip":
         with zipfile.ZipFile(f"{os.path.splitext(output)[0]}.zip", 'w') as zipf:
-            zipf.write(output, output.lower())
-        os.remove(output)
+            zipf.write(fname, fname.lower())
+        os.remove(fname)
+    else:
+        os.rename(fname, output)
 
     print(f"Dataset {dataset_name} fully converted")
     shutil.rmtree(dataset_dir)
@@ -146,13 +149,13 @@ def gml_to_dataset(gml: str) -> List[Data]:
 
     * `List[Data]` : Content of the gml dataset
     """
-    if os.path.splitext(gml)[1] == "zip":
+    if os.path.splitext(gml)[1] == ".zip":
         with zipfile.ZipFile(gml, 'r') as zipf:
             gml_file = zipf.namelist()[0]
             zipf.extract(gml_file, os.getcwd())
         gml = gml_file
 
-    with open(gml, 'r', encoding="ascii") as f:
+    with open(gml, 'r', encoding="utf8") as f:
         gml_contents = f.read()
 
     gml_files = gml_contents.split(GML_SEPARATOR)
