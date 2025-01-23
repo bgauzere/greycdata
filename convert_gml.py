@@ -3,7 +3,7 @@ Conversion for molecules graphs between `torch_geometric.data.Data` and `gml` fi
 """
 
 import os
-from typing import Optional
+from typing import Optional, List
 import shutil
 import zipfile
 from tqdm import tqdm
@@ -95,7 +95,7 @@ def gml_to_data(gml: str, gml_file: bool = True) -> Data:
         edge_attr.append(attr["edge_attr"])
 
     x = torch.tensor(x, dtype=torch.float)
-    edge_index = torch.tensor(edge_index, dtype=torch.long)
+    edge_index = torch.tensor(edge_index, dtype=torch.long).t().contiguous()
     edge_attr = torch.tensor(edge_attr, dtype=torch.long)
 
     return Data(x=x, edge_attr=edge_attr, edge_index=edge_index, y=y)
@@ -131,6 +131,33 @@ def dataset_to_gml(dataset_name: str, output: str, zip_output: bool = False) -> 
 
     print(f"Dataset {dataset_name} fully converted")
     shutil.rmtree(dataset_dir)
+
+def gml_to_dataset(gml: str) -> List[Data]:
+    """
+    Reads a dataset from a gml file and converts it into a list of `Data`
+
+    Parameters :
+    ------------
+
+    * `gml` : Source filename. If `zip` file, it will be extracted
+
+    Returns :
+    ---------
+
+    * `List[Data]` : Content of the gml dataset
+    """
+    if os.path.splitext(gml)[1] == "zip":
+        with zipfile.ZipFile(gml, 'r') as zipf:
+            gml_file = zipf.namelist()[0]
+            zipf.extract(gml_file, os.getcwd())
+        gml = gml_file
+
+    with open(gml, 'r', encoding="ascii") as f:
+        gml_contents = f.read()
+
+    gml_files = gml_contents.split(GML_SEPARATOR)
+
+    return [gml_to_data(content, False) for content in gml_files]
 
 def main() -> None:
     """Main script"""
