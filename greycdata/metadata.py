@@ -6,6 +6,7 @@ This metadata dictionary provides information for various datasets, including:
 - File names for datasets and targets
 - Data and graph formats
 - Separator used for target values
+- Node and edge attributes to be removed
 - Extra parameters specific to certain datasets
 """
 
@@ -17,6 +18,8 @@ GREYC_META = {
         'dformat': 'ds',
         'gformat': 'ct',
         'y_separator': ' ',
+        'remove_node_attrs': [],
+        'remove_edge_attrs': ['bond_stereo'],
     },
     'Alkane': {
         'task_type': 'regression',
@@ -25,6 +28,8 @@ GREYC_META = {
         'dformat': 'ds',
         'gformat': 'ct',
         'y_separator': ' ',
+        'remove_node_attrs': [],
+        'remove_edge_attrs': ['bond_stereo'],
     },
     'MAO': {
         'task_type': 'classification',
@@ -33,6 +38,8 @@ GREYC_META = {
         'dformat': 'ds',
         'gformat': 'ct',
         'y_separator': ' ',
+        'remove_node_attrs': [],
+        'remove_edge_attrs': ['bond_stereo'],
     },
     'Monoterpens': {
         'task_type': 'classification',
@@ -41,6 +48,8 @@ GREYC_META = {
         'dformat': 'ds',
         'gformat': 'ct',
         'y_separator': ' ',
+        'remove_node_attrs': [],
+        'remove_edge_attrs': ['bond_stereo'],
     },
     'PAH': {
         'task_type': 'classification',
@@ -49,5 +58,7 @@ GREYC_META = {
         'dformat': 'ds',
         'gformat': 'ct',
         'y_separator': ' ',
+        'remove_node_attrs': [],
+        'remove_edge_attrs': ['bond_stereo'],
     },
 }
