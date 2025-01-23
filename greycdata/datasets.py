@@ -66,7 +66,8 @@ class GreycDataset(InMemoryDataset):
     
     def process(self):
         # Read data into huge `Data` list.
-        graph_list, property_list = load_dataset(self.name)
+        graph_list, property_list, self.atom_list = load_dataset(self.name, 
+                                                                 True)
 
         # Convert to PyG.
         def from_nx_to_pyg(graph, y):
