@@ -152,7 +152,9 @@ def gml_to_dataset(gml: str) -> List[Data]:
 
     * `List[Data]` : Content of the gml dataset
     """
-    if os.path.splitext(gml)[1] == ".zip":
+    is_zip = os.path.splitext(gml)[1] == ".zip"
+
+    if is_zip:
         with zipfile.ZipFile(gml, 'r') as zipf:
             gml_file = zipf.namelist()[0]
             zipf.extract(gml_file, os.getcwd())
@@ -160,6 +162,9 @@ def gml_to_dataset(gml: str) -> List[Data]:
 
     with open(gml, 'r', encoding="utf8") as f:
         gml_contents = f.read()
+
+    if is_zip:
+        os.unlink(gml)
 
     gml_files = gml_contents.split(GML_SEPARATOR)
 
