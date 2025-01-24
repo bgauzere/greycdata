@@ -85,7 +85,9 @@ def gml_to_data(gml: str, gml_file: bool = True) -> Data:
 
     x, edge_index, edge_attr = [], [], []
 
-    y = torch.tensor([g.graph["y"]], dtype=torch.long) if "y" in g.graph else None
+    y = g.graph["y"]
+    dtype = torch.float if isinstance(y, float) else torch.long
+    y = torch.tensor([y], dtype=dtype) if "y" in g.graph else None
 
     for _, attr in g.nodes(data=True):
         x.append(attr["x"])
