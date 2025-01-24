@@ -85,7 +85,9 @@ def gml_to_data(gml: str, gml_file: bool = True) -> Data:
 
     x, edge_index, edge_attr = [], [], []
 
-    y = torch.tensor([g.graph["y"]], dtype=torch.long) if "y" in g.graph else None
+    y = g.graph["y"]
+    dtype = torch.float if isinstance(y, float) else torch.long
+    y = torch.tensor([y], dtype=dtype) if "y" in g.graph else None
 
     for _, attr in g.nodes(data=True):
         x.append(attr["x"])
@@ -150,7 +152,9 @@ def gml_to_dataset(gml: str) -> List[Data]:
 
     * `List[Data]` : Content of the gml dataset
     """
-    if os.path.splitext(gml)[1] == ".zip":
+    is_zip = os.path.splitext(gml)[1] == ".zip"
+
+    if is_zip:
         with zipfile.ZipFile(gml, 'r') as zipf:
             gml_file = zipf.namelist()[0]
             zipf.extract(gml_file, os.getcwd())
@@ -158,6 +162,9 @@ def gml_to_dataset(gml: str) -> List[Data]:
 
     with open(gml, 'r', encoding="utf8") as f:
         gml_contents = f.read()
+
+    if is_zip:
+        os.unlink(gml)
 
     gml_files = gml_contents.split(GML_SEPARATOR)
 
