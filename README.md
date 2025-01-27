@@ -1,21 +1,36 @@
-# Installation of required packages
+# Installation of Required Packages
 
-1. Install pytorch geometric >= 2.0
-see https://pytorch-geometric.readthedocs.io/en/latest/notes/installation.html
+1. Install PyTorch Geometric (version >= 2.0).  
+   Refer to the official [installation guide](https://pytorch-geometric.readthedocs.io/en/latest/notes/installation.html).
 
-3. `pipenv install`
+2. Install dependencies using Pipenv:  
+   ```bash
+   pipenv install
+   ```
 
 # Contents
-## greycdata : 
-    |- datasets.py : Implementation of three GREYC chemistry small datasets as pytorch
-    geometric datasets : Alkane, Acyclic and MAO. See https://brunl01.users.greyc.fr/CHEMISTRY/ for details
-     - loaders.py : load the same datasets as list of networkx graphs
-     
+
+## `greycdata`  
+This folder contains tools to work with GREYC chemistry datasets.  
+
+- **`datasets.py`**  
+  Implementation of five [GREYC chemistry datasets](https://lucbrun.ensicaen.fr/CHEMISTRY/) as PyTorch Geometric datasets:  
+  - Alkane  
+  - Acyclic  
+  - MAO  
+  - Monoterpenes  
+  - PAH  
+
+- **`loaders.py`**  
+  Provides functionality to load the same datasets as lists of NetworkX graphs.
+
 # Examples
 
-Two notebooks, one for classification, one for regression, are provided for testing
-purposes
+Two example notebooks are provided for testing purposes:
+- **Classification**  
+- **Regression**
 
 # Authors
-- Benoit Gaüzère <benoit.gauzere@insa-rouen.fr>
-- Linlin Jia <https://github.com/jajupmochi>
+
+- Benoit Gaüzère - [benoit.gauzere@insa-rouen.fr](mailto:benoit.gauzere@insa-rouen.fr)  
+- Linlin Jia - [GitHub Profile](https://github.com/jajupmochi)
