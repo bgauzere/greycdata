@@ -52,7 +52,8 @@ class GreycDataset(InMemoryDataset):
             raise ValueError(f"Dataset '{name}' Not Found.")
         self.name = name
         super().__init__(root, transform, pre_transform, pre_filter)
-        self.data, self.slices = torch.load(self.processed_paths[0])
+        self.data, self.slices = torch.load(self.processed_paths[0], 
+                                            weights_only=False)
 
         # Deletion of edge attributes duplicates
         self.data.edge_attr = torch.unique(self.data.edge_attr, dim=1)
