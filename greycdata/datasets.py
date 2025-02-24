@@ -52,7 +52,8 @@ class GreycDataset(InMemoryDataset):
             raise ValueError(f"Dataset '{name}' Not Found.")
         self.name = name
         super().__init__(root, transform, pre_transform, pre_filter)
-        self.data, self.slices = torch.load(self.processed_paths[0])
+        self.data, self.slices = torch.load(self.processed_paths[0], 
+                                            weights_only=False)
 
         # Deletion of edge attributes duplicates
         self.data.edge_attr = torch.unique(self.data.edge_attr, dim=1)
@@ -70,6 +71,7 @@ class GreycDataset(InMemoryDataset):
                                                                  True)
 
         # Convert to PyG.
+        targets = torch.tensor(property_list).unique()
         def from_nx_to_pyg(graph, y):
             """
             Converts Networkx Graph to a PyTorch Graph and adds y
@@ -87,7 +89,10 @@ class GreycDataset(InMemoryDataset):
                 group_node_attrs=node_attrs,
                 group_edge_attrs=edge_attrs,
             )
-            pyg_graph.y = y
+            if GREYC_META[self.name]["task_type"] == "classification":
+                pyg_graph.y = torch.where(targets == y)[0].item()
+            else:
+                pyg_graph.y = y
             return pyg_graph
 
         data_list = [from_nx_to_pyg(graph, y)
